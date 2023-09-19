@@ -1,13 +1,19 @@
 """
 A module for helper functions called by other modules.
 
-Depends on: ErrorHandler
+Depends on: ErrorHandler, Constants
 
 """
 
 # import discord.py
 import discord
 from discord import app_commands
+
+# import bot
+from ptn.buttonrolebot.bot import bot
+
+# import constants
+from ptn.buttonrolebot.constants import bot_guild
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError
@@ -58,3 +64,14 @@ def check_roles(permitted_role_ids):
                 raise
         return permission
     return app_commands.check(checkroles)
+
+
+"""
+Helpers
+"""
+
+async def get_guild():
+    """
+    Return bot guild instance for use in get_member()
+    """
+    return bot.get_guild(bot_guild())
