@@ -12,9 +12,12 @@ import discord
 from discord import Interaction, app_commands
 from discord.app_commands import AppCommandError
 
+# import bot
+from ptn.buttonrolebot.bot import bot
+
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import bot, channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam
 
 # custom errors
 class CommandChannelError(app_commands.CheckFailure): # channel check error

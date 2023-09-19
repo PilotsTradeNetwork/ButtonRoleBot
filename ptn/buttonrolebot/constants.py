@@ -30,8 +30,7 @@ load_dotenv(os.path.join(DATA_DIR, '.env'))
 TOKEN = os.getenv('BRB_DISCORD_TOKEN_PROD') if _production else os.getenv('BRB_DISCORD_TOKEN_TESTING')
 
 
-# define bot object
-bot = commands.Bot(command_prefix=commands.when_mentioned_or('🎢'), intents=discord.Intents.all()) # TODO: change our intents to what we actually need
+# bot = commands.Bot(command_prefix=commands.when_mentioned_or('🎢'), intents=discord.Intents.all()) # TODO: remove this if we get bot.py to work
 
 
 # Production variables
@@ -77,9 +76,3 @@ def role_mod():
 
 any_elevated_role = [role_council(), role_mod()]
 
-
-async def get_guild():
-    """
-    Return bot guild instance for use in get_member()
-    """
-    return bot.get_guild(bot_guild())
