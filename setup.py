@@ -28,7 +28,8 @@ setup(
     packages=[
         'ptn.buttonrolebot', # core
         'ptn.buttonrolebot.botcommands', # user interactions
-        'ptn.buttonrolebot.modules' # various helper modules
+        'ptn.buttonrolebot.modules', # various helper modules
+        'ptn.buttonrolebot.classes' # classes used by the bot
         ],
     description='Pilots Trade Network Button Role Bot',
     long_description=long_description,
