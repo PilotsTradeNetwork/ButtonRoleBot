@@ -1,29 +1,60 @@
 
+"""
+Embeds.py
 
+Generates embeds for use by the bot
+
+Dependencies: ErrorHandler
+"""
+
+# import discord
 import discord
 
+# import ErrorHandler
+from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error
+
 # generate an embed from a dict
-async def _generate_embed_from_dict(meta_dict, content_dict):
+async def _generate_embed_from_dict(interaction, embed_data):
+    print("Called _generate_embed_from_dict")
+    print(embed_data)
+
     # create empty embed
     embed = discord.Embed()
 
-    # Populate the embed with values from content_dict
-    if 'embed_title' in content_dict and content_dict['embed_title']:
-        embed.title = content_dict['embed_title']
-    if 'embed_description' in content_dict and content_dict['embed_description']:
-        embed.description = content_dict['embed_description']
-    if 'embed_image' in content_dict and content_dict['embed_image']:
-        embed.set_image(url=content_dict['embed_image'])
+    try:
+        # Populate the embed with values from embed_data
+        print("Add title")
+        if embed_data.embed_title:
+            embed.title = embed_data.embed_title
+        print("Add description")
+        if embed_data.embed_description:
+            embed.description = embed_data.embed_description
+        print("Add image")
+        if embed_data.embed_image:
+            print(embed_data.embed_image)
+            embed.set_image(url=embed_data.embed_image)
+        print("Add thumbnail")
+        if embed_data.embed_thumbnail:
+            print(embed_data.embed_thumbnail)
+            embed.set_thumbnail(url=embed_data.embed_thumbnail)
+        print("Add author")
+        if embed_data.embed_author_name:
+            print(embed_data.embed_author_name)
+            print("Add author avatar")
+            if embed_data.embed_author_avatar:
+                print(embed_data.embed_author_avatar)
+                embed.set_author(name=embed_data.embed_author_name, icon_url=embed_data.embed_author_avatar)
+            else:
+                embed.set_author(name=embed_data.embed_author_name)
+        print("Set color")
+        if embed_data.embed_color:
+            print(embed_data.embed_color)
+            embed.color = embed_data.embed_color
 
-    # Populate the embed with values from meta_dict
-    if 'embed_thumbnail' in meta_dict and meta_dict['embed_thumbnail']:
-        embed.set_thumbnail(url=meta_dict['embed_thumbnail'])
-    if 'embed_author_name' in meta_dict and meta_dict['embed_author_name']:
-        if 'embed_author_avatar' in meta_dict and meta_dict['embed_author_avatar']:
-            embed.set_author(name=meta_dict['embed_author_name'], icon_url=meta_dict['embed_author_avatar'])
-        else:
-            embed.set_author(name=meta_dict['embed_author_name'])
-    if 'embed_color' in meta_dict:
-        embed.color = meta_dict['embed_color']
+    except Exception as e:
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(interaction, e)
 
     return embed
