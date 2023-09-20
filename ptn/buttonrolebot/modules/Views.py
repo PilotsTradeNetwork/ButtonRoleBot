@@ -23,54 +23,47 @@ from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_erro
 
 # buttons for embed generator
 class EmbedGenButtons(View):
-    def __init__(self, embed_dict):
+    def __init__(self, original_embed):
         super().__init__(timeout=None)
-        self.embed_dict = embed_dict
+        self.original_embed = original_embed
+        self.content_dict = {}
+        self.meta_dict = {}
 
-    @discord.ui.button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="📅", custom_id="embed_meta_button")
+    @discord.ui.button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="⚙", custom_id="embed_meta_button")
     async def set_embed_params_button(self, interaction, button):
         print("Received set_embed_params_button click")
-        # check whether the meta dict exists yet, create if not
-        if 'meta_dict' not in self.embed_dict:
-            print("Creating empy sub-dictionary")
-            self.embed_dict['meta_dict'] = {}
-        await interaction.response.send_modal(EmbedMetaModal(self.embed_dict['meta_dict']))
+
+        await interaction.response.send_modal(EmbedMetaModal(self.meta_dict))
 
     @discord.ui.button(label="Set Content", style=discord.ButtonStyle.primary, emoji="🖼", custom_id="embed_content_button")
     async def set_embed_content_button(self, interaction, button):
         print("Received set_embed_content_button click")
-        # check whether content dict exists yet, create if not
-        if 'content_dict' not in self.embed_dict:
-            print("Creating empy sub-dictionary")
-            self.embed_dict['content_dict'] = {}
-        await interaction.response.send_modal(EmbedContentModal(self.embed_dict['content_dict']))
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="❌", custom_id="embed_gen_cancel_button")
+        await interaction.response.send_modal(EmbedContentModal(self.content_dict))
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="✖", custom_id="embed_gen_cancel_button")
     async def set_embed_cancel_button(self, interaction, button):
         print("Received set_embed_cancel_button click")
         embed = discord.Embed(
             description="Embed generation cancelled.",
             color=constants.EMBED_COLOUR_QU
         )
-        await interaction.response.edit_message(embed=embed)
+        await interaction.response.edit_message(embed=embed, view=None)
 
     @discord.ui.button(label="Send Embed", style=discord.ButtonStyle.success, emoji="✅", custom_id="embed_gen_send_button")
     async def set_embed_send_button(self, interaction, button):
         print("Received set_embed_send_button click")
         # check we have a sendable embed with content
-        if 'content_dict' not in self.embed_dict:
-            print("Creating empy sub-dictionary")
-            self.embed_dict['content_dict'] = {}
-        if not 'embed_message' in self.embed_dict['content_dict']:
-            await interaction.response.send_modal(EmbedContentModal(self.embed_dict['content_dict']))
+        if not 'embed_message' in self.content_dict:
+            await interaction.response.send_modal(EmbedContentModal(self.content_dict))
         else:
-            send_embed = await _generate_embed_from_dict(self.embed_dict)
+            send_embed = await _generate_embed_from_dict(self.meta_dict, self.content_dict)
             await interaction.channel.send(embed=send_embed)
             embed = discord.Embed(
                 description="Embed sent. You can now dismiss this message.",
                 color=constants.EMBED_COLOUR_OK
             )
-            await interaction.response.edit_message(embed=embed)
+            await interaction.response.edit_message(embed=embed, view=None)
 
 
 # modal for embed parameters
@@ -117,6 +110,8 @@ class EmbedMetaModal(Modal):
         self.meta_dict['embed_author_name'] = embed_author_name
         self.meta_dict['embed_author_avatar'] = embed_author_avatar
 
+        # Edit embed fields to detail contents of params TODO
+
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None: # TODO: move to Error Handler
         await interaction.response.send_message(f'Oops! Something went wrong: {error}', ephemeral=True)
 
@@ -127,20 +122,20 @@ class EmbedContentModal(Modal):
         super().__init__(title=title, timeout=timeout)
         self.content_dict = content_dict
 
-    title = discord.ui.TextInput(
+    embed_title = discord.ui.TextInput(
         label='Embed title',
         placeholder='Leave blank for none.',
         required=False,
         max_length=256,
     )
-    description = discord.ui.TextInput(
+    embed_description = discord.ui.TextInput(
         label='Embed main text.',
         style=discord.TextStyle.long,
         placeholder='Normal Discord markdown works, but mentions and custom emojis require full code.',
         required=True,
         max_length=4000,
     )
-    image = discord.ui.TextInput(
+    embed_image = discord.ui.TextInput(
         label='Embed image',
         placeholder='Enter the image\'s URL or leave blank for none.',
         required=False,
@@ -149,14 +144,16 @@ class EmbedContentModal(Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         # Collect data from the form fields
-        embed_title = self.title.value
-        embed_description = self.description.value
-        embed_image = self.image.value
+        embed_title = self.embed_title.value
+        embed_description = self.embed_description.value
+        embed_image = self.embed_image.value
         
         # Store the collected data in the data_dict
         self.content_dict['embed_title'] = embed_title
         self.content_dict['embed_description'] = embed_description
         self.content_dict['embed_image'] = embed_image
+
+        # Edit embed fields to confirm we have content TODO
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None: # TODO: move to Error Handler
         await interaction.response.send_message(f'Oops! Something went wrong: {error}', ephemeral=True)

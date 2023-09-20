@@ -105,15 +105,12 @@ class ButtonRoleCommands(commands.Cog):
     async def _send_embed(self, interaction:  discord.Interaction):
         print(f"{interaction.user.name} used /send_embed in {interaction.channel.name}")
 
-        # create our blank dictionary that will be used for the embed data
-        embed_dict = {}
-
         embed = discord.Embed(
             title='Generate an Embed',
             description='Send a message with an Embed to this channel. Buttons can be attached to this embed to grant/remove roles.',
             color=constants.EMBED_COLOUR_QU
         )
 
-        view = EmbedGenButtons(embed_dict)
+        view = EmbedGenButtons(embed)
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
