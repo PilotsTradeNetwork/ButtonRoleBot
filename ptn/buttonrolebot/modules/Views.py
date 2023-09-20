@@ -27,43 +27,50 @@ class EmbedGenButtons(View):
         super().__init__(timeout=None)
         self.embed_dict = embed_dict
 
-    @discord.ui.Button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="📅", custom_id="embed_meta_button")
+    @discord.ui.button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="📅", custom_id="embed_meta_button")
     async def set_embed_params_button(self, interaction, button):
+        print("Received set_embed_params_button click")
         # check whether the meta dict exists yet, create if not
         if 'meta_dict' not in self.embed_dict:
+            print("Creating empy sub-dictionary")
             self.embed_dict['meta_dict'] = {}
         await interaction.response.send_modal(EmbedMetaModal(self.embed_dict['meta_dict']))
 
-    @discord.ui.Button(label="Set Content", style=discord.ButtonStyle.primary, emoji="🖼", custom_id="embed_content_button")
+    @discord.ui.button(label="Set Content", style=discord.ButtonStyle.primary, emoji="🖼", custom_id="embed_content_button")
     async def set_embed_content_button(self, interaction, button):
+        print("Received set_embed_content_button click")
         # check whether content dict exists yet, create if not
         if 'content_dict' not in self.embed_dict:
+            print("Creating empy sub-dictionary")
             self.embed_dict['content_dict'] = {}
         await interaction.response.send_modal(EmbedContentModal(self.embed_dict['content_dict']))
 
-    @discord.ui.Button(label="Cancel", style=discord.ButtonStyle.danger, emoji="❌", custom_id="embed_gen_cancel_button")
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="❌", custom_id="embed_gen_cancel_button")
     async def set_embed_cancel_button(self, interaction, button):
+        print("Received set_embed_cancel_button click")
         embed = discord.Embed(
             description="Embed generation cancelled.",
             color=constants.EMBED_COLOUR_QU
         )
         await interaction.response.edit_message(embed=embed)
 
-    @discord.ui.Button(label="Send Embed", style=discord.ButtonStyle.success, emoji="✅", custom_id="embed_gen_send_button")
+    @discord.ui.button(label="Send Embed", style=discord.ButtonStyle.success, emoji="✅", custom_id="embed_gen_send_button")
     async def set_embed_send_button(self, interaction, button):
+        print("Received set_embed_send_button click")
         # check we have a sendable embed with content
-            if 'content_dict' not in self.embed_dict:
-                self.embed_dict['content_dict'] = {}
-            if not 'embed_message' in self.embed_dict['content_dict']:
-                await interaction.response.send_modal(EmbedContentModal(self.embed_dict['content_dict']))
-            else:
-                send_embed = await _generate_embed_from_dict(self.embed_dict)
-                await interaction.channel.send(embed=send_embed)
-                embed = discord.Embed(
-                    description="Embed sent. You can now dismiss this message.",
-                    color=constants.EMBED_COLOUR_OK
-                )
-                await interaction.response.edit_message(embed=embed)
+        if 'content_dict' not in self.embed_dict:
+            print("Creating empy sub-dictionary")
+            self.embed_dict['content_dict'] = {}
+        if not 'embed_message' in self.embed_dict['content_dict']:
+            await interaction.response.send_modal(EmbedContentModal(self.embed_dict['content_dict']))
+        else:
+            send_embed = await _generate_embed_from_dict(self.embed_dict)
+            await interaction.channel.send(embed=send_embed)
+            embed = discord.Embed(
+                description="Embed sent. You can now dismiss this message.",
+                color=constants.EMBED_COLOUR_OK
+            )
+            await interaction.response.edit_message(embed=embed)
 
 
 # modal for embed parameters
@@ -127,7 +134,7 @@ class EmbedContentModal(Modal):
         max_length=256,
     )
     description = discord.ui.TextInput(
-        label='Embed text.',
+        label='Embed main text.',
         style=discord.TextStyle.long,
         placeholder='Normal Discord markdown works, but mentions and custom emojis require full code.',
         required=True,

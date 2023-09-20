@@ -2,7 +2,8 @@
 
 import discord
 
-async def _generate_embed_from_modal(embed_dict):
+# generate an embed from a dict
+async def _generate_embed_from_dict(embed_dict):
     # create empty embed
     embed = discord.Embed()
 
