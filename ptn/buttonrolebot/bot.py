@@ -13,8 +13,8 @@ from discord.ext import commands
 from ptn.buttonrolebot._metadata import __version__
 from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK
 
-# import local modules
-from ptn.buttonrolebot.modules.Components import DynamicButton
+# import persistent buttons
+from ptn.buttonrolebot.views.ButtonCreator import DynamicButton
 
 # define bot object
 class ButtonRoleBot(commands.Bot):
