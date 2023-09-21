@@ -17,7 +17,7 @@ from ptn.buttonrolebot.constants import channel_botspam
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Embeds import confirm_role_view_embed, button_config_embed
+from ptn.buttonrolebot.modules.Embeds import button_config_embed
 from ptn.buttonrolebot.modules.Helpers import check_role_exists
 
 
