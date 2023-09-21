@@ -3,7 +3,7 @@ ErrorHandler.py
 
 Our custom global error handler for the bot. v1 is directly imported from MAB
 
-Dependends on: constants
+Dependends on: constants, bot
 """
 
 

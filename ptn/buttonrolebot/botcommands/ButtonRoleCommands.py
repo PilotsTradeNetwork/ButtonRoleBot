@@ -18,16 +18,19 @@ from ptn.buttonrolebot.bot import bot
 # local constants
 from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod
+from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod, any_elevated_role
 
 # local views
 from ptn.buttonrolebot.views.EmbedCreator import EmbedGenButtons
+from ptn.buttonrolebot.views.ButtonCreator import DynamicButton
 
 # local modules
-from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error
+from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Helpers import check_roles
 
 
+error_handler_generic = GenericError()
+error_handler_custom = CustomError(None)
 
 """
 A primitive global error handler for text commands.
@@ -68,7 +71,26 @@ Cannot be placed in a Cog
 Uses @bot.tree instead of @command.tree
 """
 
-# TODO: add context commands
+@bot.tree.context_menu(name='Add Role Button')
+@check_roles(any_elevated_role)
+async def add_role_button(interaction: discord.Interaction, message: discord.Message):
+    try:
+        role_id = 1 # TODO
+        view = discord.ui.View(timeout=None)
+        view.add_item(DynamicButton(message.id, role_id))
+
+        await message.edit(view=view)
+
+        await interaction.response.send_message("Button created!", ephemeral=True) # TODO
+
+    except Exception as e:
+        print(e)
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(interaction, e)
+
+
 
 """
 BRB COMMANDS COG
@@ -116,3 +138,4 @@ class ButtonRoleCommands(commands.Cog):
         view = EmbedGenButtons(embed)
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
