@@ -20,8 +20,10 @@ from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod
 
+# local views
+from ptn.buttonrolebot.views.EmbedCreator import EmbedGenButtons
+
 # local modules
-# from ptn.buttonrolebot.modules.Embeds import None
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error
 from ptn.buttonrolebot.modules.Helpers import check_roles
 
@@ -92,6 +94,25 @@ class ButtonRoleCommands(commands.Cog):
         tree.on_error = self._old_tree_error
 
 
-"""
-BRB COMMANDS
-"""
+    """
+    BRB COMMANDS
+    """
+
+    # send an embed which we can use to attach a button
+    @app_commands.command(
+        name="send_embed",
+        description="Prepare an Embed to send to this channel. This can be used to attach role buttons to."
+        )
+    @check_roles([role_council(), role_mod()]) # TODO: full permissions
+    async def _send_embed(self, interaction:  discord.Interaction):
+        print(f"{interaction.user.name} used /send_embed in {interaction.channel.name}")
+
+        embed = discord.Embed(
+            title='Generate an Embed',
+            description='Send a message with an Embed to this channel. Buttons can be attached to this embed to grant/remove roles.',
+            color=constants.EMBED_COLOUR_QU
+        )
+
+        view = EmbedGenButtons(embed)
+
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)

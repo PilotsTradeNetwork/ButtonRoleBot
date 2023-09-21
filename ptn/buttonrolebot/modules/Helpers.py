@@ -75,3 +75,17 @@ async def get_guild():
     Return bot guild instance for use in get_member()
     """
     return bot.get_guild(bot_guild())
+
+
+# remove a field from an embed
+def _remove_embed_field(embed, field_name_to_remove):
+    print(f"Called _remove_embed_field for {field_name_to_remove}")
+    try:
+        embed.remove_field(field_name_to_remove)
+        print(f"Removed {field_name_to_remove}")
+
+    except:
+        print(f"No field found for {field_name_to_remove}")
+        pass
+
+    return embed

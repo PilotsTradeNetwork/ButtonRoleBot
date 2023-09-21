@@ -28,7 +28,9 @@ setup(
     packages=[
         'ptn.buttonrolebot', # core
         'ptn.buttonrolebot.botcommands', # user interactions
-        'ptn.buttonrolebot.modules' # various helper modules
+        'ptn.buttonrolebot.modules', # various helper modules
+        'ptn.buttonrolebot.classes', # classes used by the bot
+        'ptn.buttonrolebot.views' # views used by the bot
         ],
     description='Pilots Trade Network Button Role Bot',
     long_description=long_description,
@@ -40,6 +42,7 @@ setup(
         'discord.py>=2.3.0',
         'python-dotenv==0.15.0',
         'python-dateutil>=2.8.1',
+        'validators>=0.22.0'
     ],
     entry_points={
         'console_scripts': [

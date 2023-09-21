@@ -53,7 +53,12 @@ TEST_ROLE_MOD = 903292469049974845 # PANTS Mod role
 EMBED_COLOUR_ERROR = 0x800000           # dark red
 EMBED_COLOUR_QU = 0x00d9ff              # que?
 EMBED_COLOUR_OK = 0x80ff80              # we're good here thanks, how are you?
+EMBED_COLOUR_PTN_DEFAULT = 42971     # used by various embeds throughout the server
 
+EMOJI_DONE = '🟢'
+EMOJI_NOT_DONE = '⭕'
+
+HEX_COLOR_PATTERN = r'^0x[0-9A-Fa-f]{6}$'
 
 # define constants based on prod or test environment
 def bot_guild():
