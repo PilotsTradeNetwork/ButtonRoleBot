@@ -20,17 +20,20 @@ from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod, any_elevated_role
 
+# local classes
+from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
+
 # local views
-from ptn.buttonrolebot.views.EmbedCreator import EmbedGenButtons
-from ptn.buttonrolebot.views.ButtonCreator import DynamicButton
+from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons
+from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
+from ptn.buttonrolebot.ui_elements.ButtonConfig import ChooseRoleView
 
 # local modules
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
+from ptn.buttonrolebot.modules.Embeds import button_config_embed
 from ptn.buttonrolebot.modules.Helpers import check_roles
 
-
-error_handler_generic = GenericError()
-error_handler_custom = CustomError(None)
+spamchannel = bot.get_channel(channel_botspam())
 
 """
 A primitive global error handler for text commands.
@@ -75,20 +78,33 @@ Uses @bot.tree instead of @command.tree
 @check_roles(any_elevated_role)
 async def add_role_button(interaction: discord.Interaction, message: discord.Message):
     try:
+        # instantiate an empty instance of our RoleButtonData
+        button_data = RoleButtonData()
+        # add our message object
+        button_data.message = message
+        # define our index point for content
+        index = 0
+        # generate our first embed
+        embed = button_config_embed(index, button_data)
+        # define our first view
+        view = ChooseRoleView(button_data)
+        # send message with view and embed
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        # TODO: move following to button submit in final page
         role_id = 1 # TODO
         view = discord.ui.View(timeout=None)
         view.add_item(DynamicButton(message.id, role_id))
 
         await message.edit(view=view)
 
-        await interaction.response.send_message("Button created!", ephemeral=True) # TODO
+        # await interaction.response.send_message("Button created!", ephemeral=True) # TODO
 
     except Exception as e:
         print(e)
         try:
             raise GenericError(e)
         except Exception as e:
-            await on_generic_error(interaction, e)
+            await on_generic_error(spamchannel, interaction, e)
 
 
 
@@ -139,3 +155,8 @@ class ButtonRoleCommands(commands.Cog):
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
+
+    @app_commands.command(name="testme")
+    async def _testme(self, interaction: discord.Interaction):
+        view = ChooseRoleView()
+        await interaction.response.send_message("Hi there", view=view, ephemeral=True)

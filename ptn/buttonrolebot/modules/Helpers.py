@@ -13,10 +13,10 @@ from discord import app_commands
 from ptn.buttonrolebot.bot import bot
 
 # import constants
-from ptn.buttonrolebot.constants import bot_guild
+from ptn.buttonrolebot.constants import bot_guild, channel_botspam
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError
+from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error
 
 
 """
@@ -24,6 +24,8 @@ PERMISSION CHECKS
 
 Used for application commands
 """
+
+spamchannel = bot.get_channel(channel_botspam())
 
 # trio of helper functions to check a user's permission to run a command based on their roles, and return a helpful error if they don't have the correct role(s)
 def getrole(ctx, id): # takes a Discord role ID and returns the role object
@@ -90,3 +92,17 @@ def _remove_embed_field(embed, field_name_to_remove):
 
     return embed
 
+# check if a role exists
+async def check_role_exists(interaction, role_id):
+    print(f"Called check_role_exists for {role_id}")
+    try:
+        role = discord.utils.get(interaction.guild.roles, id=role_id)
+        print(f"Role exists with name {role.name}")
+        return role
+    except Exception as e:
+        print("No role exists for this ID.")
+        try:
+            raise CustomError(f"No role found on this server matching ```{role_id}```")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return None
