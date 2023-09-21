@@ -20,8 +20,10 @@ from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod
 
+# local views
+from ptn.buttonrolebot.views.EmbedCreator import EmbedGenButtons
+
 # local modules
-from ptn.buttonrolebot.modules.Views import EmbedGenButtons
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error
 from ptn.buttonrolebot.modules.Helpers import check_roles
 

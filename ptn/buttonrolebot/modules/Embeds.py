@@ -31,24 +31,19 @@ async def _generate_embed_from_dict(interaction, embed_data):
             embed.description = embed_data.embed_description
         print("Add image")
         if embed_data.embed_image:
-            print(embed_data.embed_image)
             embed.set_image(url=embed_data.embed_image)
         print("Add thumbnail")
         if embed_data.embed_thumbnail:
-            print(embed_data.embed_thumbnail)
             embed.set_thumbnail(url=embed_data.embed_thumbnail)
         print("Add author")
         if embed_data.embed_author_name:
-            print(embed_data.embed_author_name)
             print("Add author avatar")
             if embed_data.embed_author_avatar:
-                print(embed_data.embed_author_avatar)
                 embed.set_author(name=embed_data.embed_author_name, icon_url=embed_data.embed_author_avatar)
             else:
                 embed.set_author(name=embed_data.embed_author_name)
         print("Set color")
         if embed_data.embed_color:
-            print(embed_data.embed_color)
             embed.color = embed_data.embed_color
 
     except Exception as e:
