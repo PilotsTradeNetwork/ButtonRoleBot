@@ -13,8 +13,12 @@ import validators
 import discord
 from discord.ui import View, Modal
 
+# import bot
+from ptn.buttonrolebot.bot import bot
+
 # import local constants
 import ptn.buttonrolebot.constants as constants
+from ptn.buttonrolebot.constants import channel_botspam
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
@@ -24,6 +28,7 @@ from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Helpers import _remove_embed_field
 
+spamchannel = bot.get_channel(channel_botspam())
 
 # buttons for embed generator
 class EmbedGenButtons(View):
@@ -62,7 +67,7 @@ class EmbedGenButtons(View):
         print("Received set_embed_send_button click")
         try:
             print("Calling function to generate Embed...")
-            send_embed = await _generate_embed_from_dict(interaction, self.embed_data)
+            send_embed = await _generate_embed_from_dict(self.embed_data)
             message = await interaction.channel.send(embed=send_embed)
             embed = discord.Embed(
                 description=f"✅ **Embed sent**. Message ID of containing message:\n"
@@ -76,7 +81,7 @@ class EmbedGenButtons(View):
             try:
                 raise GenericError(e)
             except Exception as e:
-                await on_generic_error(interaction, e)
+                await on_generic_error(spamchannel, interaction, e)
 
 
 # modal for embed parameters
@@ -126,14 +131,14 @@ class EmbedParamsModal(Modal):
                     try:
                         raise GenericError(e)
                     except Exception as e:
-                        await on_generic_error(interaction, e)
+                        await on_generic_error(spamchannel, interaction, e)
                     pass
             else:
                 error = f"'{self.color.value}' is not a valid hex color code."
                 try:
                     raise CustomError(error)
                 except Exception as e:
-                    await on_generic_error(interaction, e)
+                    await on_generic_error(spamchannel, interaction, e)
                 return
         else:
             print("No user color entry, assigning default.")
@@ -152,7 +157,7 @@ class EmbedParamsModal(Modal):
             try:
                 raise CustomError(error)
             except Exception as e:
-                await on_generic_error(interaction, e)
+                await on_generic_error(spamchannel, interaction, e)
             return
 
         if self.embed_data.embed_author_avatar is not None and not validators.url(self.embed_data.embed_author_avatar):
@@ -161,7 +166,7 @@ class EmbedParamsModal(Modal):
             try:
                 raise CustomError(error)
             except Exception as e:
-                await on_generic_error(interaction, e)
+                await on_generic_error(spamchannel, interaction, e)
             return
 
         field_data = ""
@@ -200,7 +205,7 @@ class EmbedParamsModal(Modal):
         try:
             raise GenericError(error)
         except Exception as e:
-            await on_generic_error(interaction, e)
+            await on_generic_error(spamchannel, interaction, e)
         return
 
 
@@ -246,7 +251,7 @@ class EmbedContentModal(Modal):
             try:
                 raise CustomError(error)
             except Exception as e:
-                await on_generic_error(interaction, e)
+                await on_generic_error(spamchannel, interaction, e)
             return
 
         field_data = ""
@@ -288,5 +293,5 @@ class EmbedContentModal(Modal):
         try:
             raise GenericError(error)
         except Exception as e:
-            await on_generic_error(interaction, e)
+            await on_generic_error(spamchannel, interaction, e)
         return

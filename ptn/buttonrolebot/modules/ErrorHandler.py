@@ -12,12 +12,8 @@ import discord
 from discord import Interaction, app_commands
 from discord.app_commands import AppCommandError
 
-# import bot
-from ptn.buttonrolebot.bot import bot
-
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
 
 # custom errors
 class CommandChannelError(app_commands.CheckFailure): # channel check error
@@ -52,11 +48,11 @@ A primitive global error handler for all app commands (slash & ctx menus)
 returns: the error message to the user and log
 """
 async def on_generic_error(
+    spamchannel, 
     interaction: Interaction,
     error
 ): # an error handler for our custom errors
     try: # this outputs the error to bot-spam for logging purposes
-        spamchannel = bot.get_channel(channel_botspam())
         spam_embed = discord.Embed(
             description=f"Error from `{interaction.command.name}` in <#{interaction.channel.id}> called by <@{interaction.user.id}>: ```{error}```",
             color=constants.EMBED_COLOUR_ERROR

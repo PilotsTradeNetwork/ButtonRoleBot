@@ -14,7 +14,7 @@ from ptn.buttonrolebot._metadata import __version__
 from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK
 
 # import persistent buttons
-from ptn.buttonrolebot.views.ButtonCreator import DynamicButton
+from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
 
 # define bot object
 class ButtonRoleBot(commands.Bot):

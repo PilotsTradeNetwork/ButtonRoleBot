@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 """
 A set of classes to add buttons to a message
@@ -15,7 +15,6 @@ import re
 
 # import discord.py
 import discord
-from discord.ui import View, Modal
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
