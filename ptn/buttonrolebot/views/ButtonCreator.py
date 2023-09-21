@@ -3,7 +3,10 @@ from __future__ import annotations
 """
 A set of classes to add buttons to a message
 
-Depends on: constants, Embeds, ErrorHandler, Helpers
+Depends on: constants
+
+ErrorHandler cannot be imported directly because of dependency on bot.py
+Instead, pass it through to the class if needed (e.g. self.error_handler)
 
 """
 
@@ -30,6 +33,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
         self.message_id: int = message_id
         self.role_id: int = role_id
         print("DynamicButton: create called")
+        # TODO: - Modal to select button attributes
 
     # This is called when the button is clicked and the custom_id matches the template.
     @classmethod
