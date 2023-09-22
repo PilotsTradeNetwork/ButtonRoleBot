@@ -18,10 +18,11 @@ from ptn.buttonrolebot.constants import EMBED_COLOUR_ERROR, EMBED_COLOUR_OK, EMB
     HOORAY_GIFS, BUTTON_CHOOSE_THUMBNAIL, BUTTON_SWEAT_THUMBNAIL, THERE_THERE, STRESS_GIFS, YOU_GO_GIRL, AMAZING_GIFS
 
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
+from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 
 # generate an embed from a dict
-async def _generate_embed_from_dict(embed_data):
+async def _generate_embed_from_dict(embed_data: EmbedData):
     print("Called _generate_embed_from_dict")
     print(embed_data)
 
@@ -36,6 +37,9 @@ async def _generate_embed_from_dict(embed_data):
     print("Add description")
     if embed_data.embed_description:
         embed.description = embed_data.embed_description
+    print("Add footer")
+    if embed_data.embed_footer:
+        embed.set_footer(text=embed_data.embed_footer)
     print("Add image")
     if embed_data.embed_image:
         embed.set_image(url=embed_data.embed_image)
@@ -60,7 +64,10 @@ def button_config_embed(index, button_data: RoleButtonData):
     print("called button_config_embed")
     message: discord.Message = button_data.message
 
-    footer = f"Step {index + 1} of 5"
+    if index <= 4:
+        footer = f"Step {index + 1} of 5"
+    else:
+        footer = "All done!"
 
     embed = discord.Embed(color=EMBED_COLOUR_QU)
 
@@ -71,25 +78,27 @@ def button_config_embed(index, button_data: RoleButtonData):
         # add summary fields
         if button_data.button_label is not None:
             label = button_data.button_label
-            embed.add_field(name="Label", value=label)
+        else:
+            label = '*None*'
+        embed.add_field(name="Label", value=label)
 
         if button_data.button_emoji is not None:
             emoji = button_data.button_emoji
-            embed.add_field(name="Emoji", value=emoji)
+        else:
+            emoji = '*None*'
+        embed.add_field(name="Emoji", value=emoji)
 
-        if button_data.button_style:
-            style = button_data.get_button_style_name()
-            embed.add_field(name="Style", value=style)
+        style = button_data.get_button_style_name()
+        embed.add_field(name="Style", value=style)
 
-        if button_data.role_id:
-            role_id = button_data.role_id
-            embed.add_field(name="Target Role", value=f'<@&{role_id}>\n`{role_id}`')
+        role_id = button_data.role_id
+        embed.add_field(name="Target Role", value=f'<@&{role_id}>\n`{role_id}`')
 
-        if button_data.message:
-            message = button_data.message
-            embed.add_field(name="Target Message", value=f'{message.jump_url}\n`{message.id}`')
+        message = button_data.message
+        embed.add_field(name="Target Message", value=f'{message.jump_url}\n`{message.id}`')
 
     if index == 0:
+        print("Returning embed for index 0")
         # embed.title="Add Role Button to Message"
         embed.description = \
             '# Add Role Button to Message\n' \
@@ -101,6 +110,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 1:
+        print("Returning embed for index 1")
         # embed.title="Confirm Button Role"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
         embed.description = \
@@ -111,6 +121,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 2:
+        print("Returning embed for index 2")
         # embed.title="Button Style"
         embed.description = \
             '# Button Style\n' \
@@ -119,6 +130,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
     
     elif index == 3:
+        print("Returning embed for index 3")
         # embed.title="Button Label & Emoji"
         embed.description = \
             '# Button Label & Emoji\n' \
@@ -131,6 +143,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 4:
+        print("Returning embed for index 4")
         print(button_data)
         # embed.title="Confirm Button Details"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
@@ -142,6 +155,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 5:
+        print("Returning embed for index 5")
         # embed.title="Confirm Button Details"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
 

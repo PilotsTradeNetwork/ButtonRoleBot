@@ -3,7 +3,7 @@ ErrorHandler.py
 
 Our custom global error handler for the bot. v1 is directly imported from MAB
 
-Dependends on: constants, bot
+Dependends on: constants
 """
 
 
@@ -60,6 +60,14 @@ async def on_generic_error(
         await spamchannel.send(embed=spam_embed)
     except Exception as e:
         print(e)
+        try:
+            spam_embed = discord.Embed(
+                description=f"Error from `{interaction}` in <#{interaction.channel.id}> called by <@{interaction.user.id}>: ```{error}```",
+                color=constants.EMBED_COLOUR_ERROR
+            )
+            await spamchannel.send(embed=spam_embed)
+        except Exception as e:
+            print(e)
 
     if isinstance(error, GenericError): # Our bog-standard "hey, an error!" response. Just displays the raw error text to the user without explanation
         print(f"Generic error raised: {error}")

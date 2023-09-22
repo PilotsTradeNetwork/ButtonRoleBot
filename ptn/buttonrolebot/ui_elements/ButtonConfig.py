@@ -3,7 +3,6 @@ A set of discord.ui elements for customising buttons added by BRB.
 
 """
 # import discord
-from typing import Any, Optional
 import discord
 from discord.interactions import Interaction
 from discord.ui import View, Modal, Button
@@ -21,7 +20,7 @@ from ptn.buttonrolebot.constants import channel_botspam
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists
+from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_button_to_view
 
 
 
@@ -105,9 +104,10 @@ class CancelButton(Button):
     async def callback(self, interaction: discord.Interaction):
         print("Received ✖ generic_cancel_button click")
         embed = discord.Embed(
-            description="❎ **Button creation cancelled**. You can dismiss this message.",
+            description="❎ **Button creation cancelled**.",
             color=constants.EMBED_COLOUR_QU
         )
+        embed.set_footer(text="You can dismiss this message.")
         return await interaction.response.edit_message(embed=embed, view=None)
 
 class PrevButton(Button):
@@ -159,9 +159,23 @@ class NextButton(Button):
             role = await check_role_exists(interaction, self.button_data.role_id)
 
             if role == None: 
+                try:
+                    raise CustomError(f"Can't find a role with ID `{self.button_data.role_id}`.")
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
                 return
             else:
                 self.button_data.role_object = role
+
+            # check if we have permission to manage this role
+            bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+            if bot_member.top_role < role:
+                print("We don't have permission for this role")
+                try:
+                    raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return
 
         elif self.index == 2:
             if self.button_data.button_style == None:
@@ -380,6 +394,7 @@ class ConfirmConfigView(View):
     def __init__(self, button_data: RoleButtonData):
         super().__init__(timeout=None)
         self.button_data = button_data
+        self.message: discord.Message = self.button_data.message
         self.index = 4
         self.clear_items()
         self.add_item(PrevButton(self.index, self.button_data))
@@ -397,9 +412,15 @@ class ConfirmConfigView(View):
         print("Received ✅ final_submit_button click")
         try:
             # create the button!
-            # TODO lol
-            # increment index by 1
+            view = _add_role_button_to_view(interaction, self.button_data)
 
+            # edit it into the target message
+            await self.message.edit(view=view)
+            
+
+            # TODO lol
+
+            # increment index by 1
             final_index = self.index + 1
             embed = button_config_embed(final_index, self.button_data)
             view = StressButtonView()
@@ -432,14 +453,10 @@ class StressButtonView(View):
         except:
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-class StressButtonView(View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
     @discord.ui.button(
-        label='I\m amazing!',
-        style=discord.ButtonStyle.danger,
-        custom_id="stress_button",
+        label='I\'m amazing!',
+        style=discord.ButtonStyle.success,
+        custom_id="amazing_button",
         emoji='💪'
     )
 
@@ -488,6 +505,22 @@ class EnterRoleIDModal(Modal):
         role = await check_role_exists(interaction, self.button_data.role_id)
 
         if role == None: 
+            try:
+                raise CustomError(f"Can't find a role with ID `{self.button_data.role_id}`.")
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+            return
+        else:
+            self.button_data.role_object = role
+
+        # check if we have permission to manage this role
+        bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+        if bot_member.top_role < role:
+            print("We don't have permission for this role")
+            try:
+                raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
             return
 
         embed, view = _increment_index(self.index, self.button_data)
@@ -507,27 +540,42 @@ class EnterLabelEmojiModal(Modal):
         label='Label',
         placeholder='The text that will appear on your button.',
         required=False,
-        max_length=80,
-        default=None
+        max_length=80
     )
     button_emoji = discord.ui.TextInput(
         label='Emoji',
         placeholder='The emoji that will appear on your button.',
         required=False,
-        max_length=60,
-        default=None
+        max_length=60
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        if not self.button_label and not self.button_emoji:
+        if self.button_label.value == "" and self.button_emoji.value == "":
             try:
                 raise CustomError(f"You must give the button *at least one* of either **label** or **emoji**.")
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
             return
         
-        if self.button_label: self.button_data.button_label = self.button_label 
-        if self.button_emoji: self.button_data.button_emoji = self.button_emoji
+        if self.button_label.value == "":
+            print("🔴 Received empty string for Label")
+            self.button_data.button_label = None
+        else: 
+            self.button_data.button_label = self.button_label
+
+        print(f'Button label set: {self.button_data.button_label}')
+
+        if self.button_emoji.value == "":
+            print("🔴 Received empty string for Emoji")
+            self.button_data.button_emoji = None
+        else:
+            self.button_data.button_emoji = str(self.button_emoji)
+
+        print(f'Button emoji set: {self.button_data.button_emoji}')
+
+        if self.button_data.button_emoji:
+            print("✅ Bot thinks we have an emoji")
+
 
         embed, view = _increment_index(self.index, self.button_data)
 
