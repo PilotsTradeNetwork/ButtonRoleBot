@@ -7,12 +7,17 @@ Generates embeds for use by the bot
 Dependencies: constants
 Error Handling should be dealt with from calling functions
 """
+# import libraries
+import random
 
 # import discord
 import discord
 
 # import constants
-from ptn.buttonrolebot.constants import EMBED_COLOUR_ERROR, EMBED_COLOUR_OK, EMBED_COLOUR_QU, channel_botspam
+from ptn.buttonrolebot.constants import EMBED_COLOUR_ERROR, EMBED_COLOUR_OK, EMBED_COLOUR_QU, channel_botspam, \
+    HOORAY_GIFS, BUTTON_CHOOSE_THUMBNAIL, BUTTON_SWEAT_THUMBNAIL, THERE_THERE, STRESS_GIFS, YOU_GO_GIRL, AMAZING_GIFS
+
+from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 
 # generate an embed from a dict
@@ -51,44 +56,126 @@ async def _generate_embed_from_dict(embed_data):
 
     return embed
 
-def button_config_embed(index, button_data):
+def button_config_embed(index, button_data: RoleButtonData):
+    print("called button_config_embed")
+    message: discord.Message = button_data.message
+
+    footer = f"Step {index + 1} of 5"
+
+    embed = discord.Embed(color=EMBED_COLOUR_QU)
+
+    embed.set_thumbnail(url=BUTTON_CHOOSE_THUMBNAIL)
+    embed.set_footer(text=footer)
+
+    if index >= 4:
+        # add summary fields
+        if button_data.button_label is not None:
+            label = button_data.button_label
+            embed.add_field(name="Label", value=label)
+
+        if button_data.button_emoji is not None:
+            emoji = button_data.button_emoji
+            embed.add_field(name="Emoji", value=emoji)
+
+        if button_data.button_style:
+            style = button_data.get_button_style_name()
+            embed.add_field(name="Style", value=style)
+
+        if button_data.role_id:
+            role_id = button_data.role_id
+            embed.add_field(name="Target Role", value=f'<@&{role_id}>\n`{role_id}`')
+
+        if button_data.message:
+            message = button_data.message
+            embed.add_field(name="Target Message", value=f'{message.jump_url}\n`{message.id}`')
+
     if index == 0:
-        embed = discord.Embed(
-        description=f':rocket: Let\'s add a role button to {button_data.message.jump_url}\n\n' \
-                    'First, enter the 🎢 **role ID** of the role you wish the button to add/remove. ' \
-                    'You can find a role ID using Discord\'s developer mode, by right-clicking on a role ' \
-                    'in a user\'s role list, or in the server\'s roles menu.',
-                    color=EMBED_COLOUR_QU
-        )
+        # embed.title="Add Role Button to Message"
+        embed.description = \
+            '# Add Role Button to Message\n' \
+            f'Let\'s :rocket: **add a role button** to {message.jump_url}\n\n' \
+            'First, enter the 🎢 **role ID** of the role you wish the button to add/remove. ' \
+            'You can find a role ID using Discord\'s developer mode, by right-clicking on a role ' \
+            'in a user\'s role list, or in the server\'s roles menu.'
+
         return embed
 
     elif index == 1:
-        embed = discord.Embed(
-            description=f'Please ✅ confirm you want to use your button to add the following role:\n' \
-                        f'<@&{button_data.role_id}>',
-            color=EMBED_COLOUR_QU
-        )
+        # embed.title="Confirm Button Role"
+        embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
+        embed.description = \
+            '# Confirm Button Role\n' \
+            f'Please ✅ **confirm** you want to use your button to add the following role:\n' \
+            f'## <@&{button_data.role_id}>'
+
         return embed
 
     elif index == 2:
-        embed = discord.Embed(
-            description=f'Now choose which 🎨 **style of button** you want to add.',
-            color=EMBED_COLOUR_QU
-        )
+        # embed.title="Button Style"
+        embed.description = \
+            '# Button Style\n' \
+            f'Now choose which 🎨 **style of button** you want to add.'
+
         return embed
     
     elif index == 3:
-        embed = discord.Embed(
-            description=f'Now choose your button\'s 📄 **label** and 🤪 **emoji**.\n\n' \
-                        '- Custom emojis should be in the format `<:name:ID>`\n' \
-                        '- Default emojis should be in the format `:name:`',
-            color=EMBED_COLOUR_QU
-        )
+        # embed.title="Button Label & Emoji"
+        embed.description = \
+            '# Button Label & Emoji\n' \
+            f'Now choose your button\'s 🏷 **label** and 🤪 **emoji**.\n\n' \
+            '- Buttons can have both a label and an emoji, but need *at least one or the other* to be valid.\n' \
+            '- Custom emojis should be in the format: `<:name:id>`\n' \
+            '- Default emojis can be entered using an emoji keyboard (Windows: `Win`+`.`) '\
+            'or copy/pasting from a sent Discord message.`'
+
         return embed
 
     elif index == 4:
-        embed = discord.Embed(
-            description=f'Congratulations! you win a button', # TODO: show details for confirmation
-            color=EMBED_COLOUR_QU
-        )
+        print(button_data)
+        # embed.title="Confirm Button Details"
+        embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
+
+        embed.description = \
+            '# Confirm Button Details\n' \
+            'Congratulations! You win a button! Here is your prize. Please indicate if you wish to accept it:' 
+
         return embed
+
+    elif index == 5:
+        # embed.title="Confirm Button Details"
+        embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
+
+        gif = random.choice(HOORAY_GIFS)
+
+        embed.description = \
+            '# Button Created!'
+        
+        embed.set_image(url=gif)
+
+        return embed
+
+
+def stress_embed():
+    print("called stress_embed")
+    # attach a random image from the "there, there" category
+    gif = random.choice(STRESS_GIFS)
+
+    embed = discord.Embed(
+        description=random.choice(THERE_THERE),
+        color=EMBED_COLOUR_OK
+    )
+    embed.set_image(url=gif)
+    return embed
+
+
+def amazing_embed():
+    print("called amazing_embed")
+    # attach a random image from the "there, there" category
+    gif = random.choice(AMAZING_GIFS)
+
+    embed = discord.Embed(
+        description=random.choice(YOU_GO_GIRL),
+        color=EMBED_COLOUR_OK
+    )
+    embed.set_image(url=gif)
+    return embed

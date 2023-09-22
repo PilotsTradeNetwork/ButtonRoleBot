@@ -1,10 +1,13 @@
+# import discord so discord.ButtonStyle has meaning
+import discord
+
 class RoleButtonData:
 
     def __init__(self, info_dict=None):
         """
         Class represents a RoleButtonData object as returned from user input.
 
-        :param info_dict: RoleButtonData data.
+        :param info_dict: RoleButtonData data expressed as a dict.
         """
         if info_dict:
             # Convert the object to a dictionary
@@ -14,6 +17,7 @@ class RoleButtonData:
 
         self.message = info_dict.get('message', None)
         self.role_id = info_dict.get('role_id', None)
+        self.role_object = info_dict.get('role_object', None)
         self.button_label = info_dict.get('button_label', None)
         self.button_emoji = info_dict.get('button_emoji', None)
         self.button_style = info_dict.get('button_style', None)
@@ -30,6 +34,24 @@ class RoleButtonData:
             if value is not None:
                 response[key] = value
         return response
+
+    def get_button_style_name(self):
+        """
+        Formats discord.ButtonStyle into a form readable by normies 🤓
+        """
+
+        style_mapping = {
+            discord.ButtonStyle.success: 'Success (Green)',
+            discord.ButtonStyle.primary: 'Primary (Blurple)',
+            discord.ButtonStyle.secondary: 'Secondary (Grey)',
+            discord.ButtonStyle.danger: 'Danger (Red)'
+        }
+
+        style = style_mapping.get(self.button_style, None)
+        print(f"Style is {style}")
+
+        return style
+        
 
     def __str__(self):
         """
