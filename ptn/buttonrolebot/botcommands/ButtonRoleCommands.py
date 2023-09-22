@@ -18,16 +18,22 @@ from ptn.buttonrolebot.bot import bot
 # local constants
 from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod
+from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod, any_elevated_role
+
+# local classes
+from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # local views
-from ptn.buttonrolebot.views.EmbedCreator import EmbedGenButtons
+from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons
+from ptn.buttonrolebot.ui_elements.ButtonConfig import ChooseRoleView
+from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 
 # local modules
-from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error
-from ptn.buttonrolebot.modules.Helpers import check_roles
+from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
+from ptn.buttonrolebot.modules.Embeds import button_config_embed
+from ptn.buttonrolebot.modules.Helpers import check_roles, _add_role_button_to_view
 
-
+spamchannel = bot.get_channel(channel_botspam())
 
 """
 A primitive global error handler for text commands.
@@ -67,8 +73,78 @@ CONTEXT COMMANDS
 Cannot be placed in a Cog
 Uses @bot.tree instead of @command.tree
 """
+# remove view from a bot message
+@bot.tree.context_menu(name='Remove Buttons')
+@check_roles(any_elevated_role)
+async def remove_role_buttons(interaction: discord.Interaction, message: discord.Message):
+    # check message was sent by bot
+    if not message.author == bot.user:
+        try:
+            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
 
-# TODO: add context commands
+    # confirm removal
+    embed = discord.Embed(
+        description=f"Confirm removal of buttons from {message.jump_url}? **This cannot be undone**.",
+        color=constants.EMBED_COLOUR_QU
+    )
+
+    view = ConfirmRemoveButtonsView(message)
+
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
+# add role button
+@bot.tree.context_menu(name='Add Role Button')
+@check_roles(any_elevated_role)
+async def add_role_button(interaction: discord.Interaction, message: discord.Message):
+    # check message was sent by bot
+    if not message.author == bot.user:
+        try:
+            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
+
+    """    try: # temp code for testing
+        print("Hello there")
+        button_data = RoleButtonData()
+        button_data.message = message
+        button_data.button_emoji = None
+        button_data.button_label = "Hello"
+        button_data.button_style = discord.ButtonStyle.success
+        button_data.role_id = 822999970012463154
+
+        print("General Kenobi")
+        view = _add_role_button_to_view(interaction, button_data)
+
+        print("👋")
+        await message.edit(view=view)"""
+
+    try: 
+        # instantiate an empty instance of our RoleButtonData
+        button_data = RoleButtonData()
+        # add our message object
+        button_data.message = message
+        # define our index point for content
+        index = 0
+        # generate our first embed
+        embed = button_config_embed(index, button_data)
+        # define our first view
+        view = ChooseRoleView(button_data)
+        # send message with view and embed
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    except Exception as e:
+        print(e)
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+
+
 
 """
 BRB COMMANDS COG
@@ -109,10 +185,16 @@ class ButtonRoleCommands(commands.Cog):
 
         embed = discord.Embed(
             title='Generate an Embed',
-            description='Send a message with an Embed to this channel. Buttons can be attached to this embed to grant/remove roles.',
+            description='Send a message with an Embed to this channel. Buttons can be attached to this message to grant/remove roles.',
             color=constants.EMBED_COLOUR_QU
         )
 
         view = EmbedGenButtons(embed)
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
+    @app_commands.command(name="testme")
+    async def _testme(self, interaction: discord.Interaction):
+        view = ChooseRoleView()
+        await interaction.response.send_message("Hi there", view=view, ephemeral=True)

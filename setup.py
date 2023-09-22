@@ -30,7 +30,7 @@ setup(
         'ptn.buttonrolebot.botcommands', # user interactions
         'ptn.buttonrolebot.modules', # various helper modules
         'ptn.buttonrolebot.classes', # classes used by the bot
-        'ptn.buttonrolebot.views' # views used by the bot
+        'ptn.buttonrolebot.ui_elements' # discord.ui elements used by the bot
         ],
     description='Pilots Trade Network Button Role Bot',
     long_description=long_description,
