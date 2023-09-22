@@ -43,9 +43,10 @@ class EmbedGenButtons(View):
     async def set_embed_cancel_button(self, interaction, button):
         print("Received set_embed_cancel_button click")
         embed = discord.Embed(
-            description="❎ **Embed generation cancelled**. You can dismiss this message.",
+            description="❎ **Embed generation cancelled**.",
             color=constants.EMBED_COLOUR_QU
         )
+        embed.set_footer(text="You can dismiss this message.")
         await interaction.response.edit_message(embed=embed, view=None)
 
     @discord.ui.button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="⚙", custom_id="embed_params_button")
@@ -63,7 +64,7 @@ class EmbedGenButtons(View):
         print(self.embed_data)
 
     @discord.ui.button(label="Send Embed", style=discord.ButtonStyle.success, emoji="✅", custom_id="embed_gen_send_button")
-    async def set_embed_send_button(self, interaction, button):
+    async def set_embed_send_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_send_button click")
         try:
             print("Calling function to generate Embed...")
@@ -71,9 +72,10 @@ class EmbedGenButtons(View):
             message = await interaction.channel.send(embed=send_embed)
             embed = discord.Embed(
                 description=f"✅ **Embed sent**. Message ID of containing message:\n"
-                            f"```{message.id}```\nYou can now dismiss this message.",
+                            f"```{message.id}```",
                 color=constants.EMBED_COLOUR_OK
             )
+            embed.set_footer(text="You can dismiss this message.")
             await interaction.response.edit_message(embed=embed, view=None)
 
         except Exception as e:
@@ -89,7 +91,7 @@ class EmbedParamsModal(Modal):
     def __init__(self, original_embed, embed_data, view, title = 'Set Embed Parameters', timeout = None) -> None:
         super().__init__(title=title, timeout=timeout)
         self.original_embed = original_embed
-        self.embed_data = embed_data
+        self.embed_data: EmbedData = embed_data
         self.view = view
 
     
@@ -215,7 +217,7 @@ class EmbedContentModal(Modal):
         super().__init__(title=title, timeout=timeout)
         self.original_embed = original_embed
         self.view = view
-        self.embed_data = embed_data
+        self.embed_data: EmbedData = embed_data
 
     embed_title = discord.ui.TextInput(
         label='Embed title',
@@ -230,6 +232,13 @@ class EmbedContentModal(Modal):
         required=True,
         max_length=4000,
     )
+    embed_footer = discord.ui.TextInput(
+        label='Embed footer text.',
+        style=discord.TextStyle.long,
+        placeholder='Titles and footers accept text and unicode emojis only.',
+        required=False,
+        max_length=2000,
+    )
     embed_image = discord.ui.TextInput(
         label='Embed image',
         placeholder='Enter the image\'s URL or leave blank for none.',
@@ -241,6 +250,7 @@ class EmbedContentModal(Modal):
         # store data from the form fields into our EmbedData instance
         self.embed_data.embed_title = self.embed_title.value if self.embed_title.value else None
         self.embed_data.embed_description = self.embed_description.value if self.embed_description.value else None
+        self.embed_data.embed_footer = self.embed_footer.value if self.embed_footer.value else None
         self.embed_data.embed_image = self.embed_image.value if self.embed_image.value else None
         print(self.embed_data)
 
@@ -264,6 +274,10 @@ class EmbedContentModal(Modal):
             field_data += f'\n{constants.EMOJI_DONE} Main text'
         else:
             field_data += f'\n{constants.EMOJI_NOT_DONE} Main text'
+        if self.embed_data.embed_footer is not None:
+            field_data += f'\n{constants.EMOJI_DONE} Footer'
+        else:
+            field_data += f'\n{constants.EMOJI_NOT_DONE} Footer'
         if self.embed_data.embed_image is not None:
             field_data += f'\n{constants.EMOJI_DONE} Main Image URL'
         else:

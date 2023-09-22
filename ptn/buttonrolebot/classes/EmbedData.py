@@ -15,6 +15,7 @@ class EmbedData:
         self.embed_title = info_dict.get('embed_title', None)
         self.embed_description = info_dict.get('embed_description', None)
         self.embed_image = info_dict.get('embed_image', None)
+        self.embed_footer = info_dict.get('embed_footer', None)
         self.embed_thumbnail = info_dict.get('embed_thumbnail', None)
         self.embed_author_name = info_dict.get('embed_author_name', None)
         self.embed_author_avatar = info_dict.get('embed_author_avatar', None)
@@ -39,9 +40,9 @@ class EmbedData:
 
         :rtype: str
         """
-        return 'EmbedData: embed_title:{0.embed_title} embed_description:{0.embed_description} ' \
-               'embed_image:{0.embed_image} embed_thumbnail:{0.embed_thumbnail} ' \
-               'embed_author_name:{0.embed_author_name} embed_author_avatar:{0.embed_author_avatar}' \
+        return 'EmbedData: embed_title:{0.embed_title} | embed_description:{0.embed_description} | ' \
+               'embed_image:{0.embed_image} embed_footer:{0.embed_footer} | embed_thumbnail:{0.embed_thumbnail} | ' \
+               'embed_author_name:{0.embed_author_name} | embed_author_avatar:{0.embed_author_avatar} | ' \
                'embed_color:{0.embed_color}'.format(self)
 
     def __bool__(self):

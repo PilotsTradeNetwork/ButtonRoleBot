@@ -25,13 +25,13 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # local views
 from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons
-from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
 from ptn.buttonrolebot.ui_elements.ButtonConfig import ChooseRoleView
+from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 
 # local modules
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed
-from ptn.buttonrolebot.modules.Helpers import check_roles
+from ptn.buttonrolebot.modules.Helpers import check_roles, _add_role_button_to_view
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -73,7 +73,30 @@ CONTEXT COMMANDS
 Cannot be placed in a Cog
 Uses @bot.tree instead of @command.tree
 """
+# remove view from a bot message
+@bot.tree.context_menu(name='Remove Buttons')
+@check_roles(any_elevated_role)
+async def remove_role_buttons(interaction: discord.Interaction, message: discord.Message):
+    # check message was sent by bot
+    if not message.author == bot.user:
+        try:
+            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
 
+    # confirm removal
+    embed = discord.Embed(
+        description=f"Confirm removal of buttons from {message.jump_url}? **This cannot be undone**.",
+        color=constants.EMBED_COLOUR_QU
+    )
+
+    view = ConfirmRemoveButtonsView(message)
+
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
+# add role button
 @bot.tree.context_menu(name='Add Role Button')
 @check_roles(any_elevated_role)
 async def add_role_button(interaction: discord.Interaction, message: discord.Message):
@@ -85,7 +108,22 @@ async def add_role_button(interaction: discord.Interaction, message: discord.Mes
             await on_generic_error(spamchannel, interaction, e)
         return
 
-    try:
+    """    try: # temp code for testing
+        print("Hello there")
+        button_data = RoleButtonData()
+        button_data.message = message
+        button_data.button_emoji = None
+        button_data.button_label = "Hello"
+        button_data.button_style = discord.ButtonStyle.success
+        button_data.role_id = 822999970012463154
+
+        print("General Kenobi")
+        view = _add_role_button_to_view(interaction, button_data)
+
+        print("👋")
+        await message.edit(view=view)"""
+
+    try: 
         # instantiate an empty instance of our RoleButtonData
         button_data = RoleButtonData()
         # add our message object
@@ -98,14 +136,6 @@ async def add_role_button(interaction: discord.Interaction, message: discord.Mes
         view = ChooseRoleView(button_data)
         # send message with view and embed
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-        # TODO: move following to button submit in final page
-        role_id = 1 # TODO
-        view = discord.ui.View(timeout=None)
-        view.add_item(DynamicButton(message.id, role_id))
-
-        await message.edit(view=view)
-
-        # await interaction.response.send_message("Button created!", ephemeral=True) # TODO
 
     except Exception as e:
         print(e)

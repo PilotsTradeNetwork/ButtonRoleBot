@@ -8,15 +8,13 @@ Depends on: ErrorHandler, Constants
 # import discord.py
 import discord
 from discord import app_commands
+from discord.ui import View
 
 # import bot
-from ptn.buttonrolebot.bot import bot
+from ptn.buttonrolebot.bot import bot, DynamicButton
 
 # import constants
 from ptn.buttonrolebot.constants import bot_guild, channel_botspam
-
-# import views
-from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
@@ -115,11 +113,31 @@ async def check_role_exists(interaction, role_id):
     
 # add role button to message
 # this one is kind of a big deal
-async def _add_role_button_to_message(interaction, button_data: RoleButtonData):
+def _add_role_button_to_view(interaction, button_data: RoleButtonData):
+    print("Called _add_role_button_to_view")
+    print(button_data)
     message: discord.Message = button_data.message
     style: discord.ButtonStyle = button_data.button_style
-    role: discord.Role = button_data.role_object
-    view = discord.ui.View(timeout=None)
-    button = DynamicButton(
-        
-    )
+    # role: discord.Role = button_data.role_object
+
+    print("Instantiating DynamicButton component")
+    button = DynamicButton(button_data.role_id, message.id)
+
+    print("Setting button properties")
+    button.item.label = button_data.button_label if button_data.button_label else None
+    button.item.emoji = button_data.button_emoji if button_data.button_emoji else None
+    button.item.style = style
+
+    print("Checking if message has a view")
+    if message.components:
+        print("Existing view detected, we will add our button to it")
+        view = View.from_message(message)
+        view.timeout=None
+    else:
+        print("Defining empty view")
+        view = discord.ui.View(timeout=None)
+
+    print("Adding dynamic button component")
+    view.add_item(button)
+
+    return view
