@@ -60,6 +60,53 @@ EMOJI_NOT_DONE = '⭕'
 
 HEX_COLOR_PATTERN = r'^0x[0-9A-Fa-f]{6}$'
 
+BUTTON_CHOOSE_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/2023/09/two_buttons_cropped.png"
+BUTTON_SWEAT_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/2023/09/two_buttons_sweating_guy.png"
+
+HOORAY_GIFS = [
+    "https://media.tenor.com/wPuTaxlyovsAAAAC/bluey-hooray.gif", # Bluey
+    "https://media.tenor.com/v4FpeS4fxBUAAAAC/celebration-celebrate.gif", # keytar confetti party
+    "https://media.tenor.com/t2BKH5zl5z4AAAAC/cookie-monster-sesame-street.gif", # cookie monster
+    "https://media.tenor.com/t6pHmhd6VcoAAAAC/thumbs-up.gif" # thumbs up x a billion
+]
+
+STRESS_GIFS = [
+    "https://media.tenor.com/BpWIVDqRNWYAAAAC/30rock-alec-baldwin.gif", # 30 rock broom toilet
+    "https://media.tenor.com/9LnT9uU_IZoAAAAC/big-hero6-baymax.gif", # big hero 6
+    "https://media.tenor.com/eZAJXNrFZd8AAAAd/hug-dan-levy.gif", # Schitt's Creek
+    "https://media.tenor.com/xO6zr96a1Z4AAAAC/come-there-there.gif", # Dr Evil
+    "https://media.tenor.com/IBinlCV2_koAAAAC/sssh-its-ok-you-are-loved-there-there.gif", # you are loved
+    "https://media.tenor.com/diSWdrgqr_IAAAAd/there-there-there-there-human.gif", # there there human
+    "https://media.tenor.com/nD5Qsz1adroAAAAd/there-30rock.gif", # 30 rock business card
+    "https://media.tenor.com/CnTxN4UrdysAAAAC/boo-hug.gif", # Monsters Inc
+    "https://media.tenor.com/uW0B9nSn4DsAAAAC/there-there-cats.gif" # dog and cat
+]
+
+AMAZING_GIFS = [
+    "https://media.tenor.com/2cj5umkSaswAAAAd/ted-lasso-tedlassogifs.gif", # ted lasso
+    "https://media.tenor.com/8qtOK6_iNRMAAAAC/proud-ron-swanson.gif", # ron is proud of you
+    "https://media.tenor.com/OShgvZ8e50wAAAAC/kronk-mission.gif", # kronk accomplished
+    "https://media.tenor.com/RdXkAIPupDcAAAAC/yes-sir-ana-kendrick.gif", # pitch perfect salute
+    "https://media.tenor.com/VGuFz5LmvdcAAAAC/absolute-win-i-see-this-as-an-absolute-win.gif", # absolute win (no but srsly)
+    "https://media.tenor.com/V9V2OMYWmMIAAAAC/oh-you-aint-seen-nothing-yet-branch.gif", # trolls ain't seen nuthin
+    "https://media.tenor.com/K_YUkFYeDqUAAAAC/thor-marvel.gif", # that's what heroes do
+    "https://media.tenor.com/ZCVrHrXgaoUAAAAC/treat-yo-self-treat-yourself.gif" # treat yo self
+]
+
+THERE_THERE = [
+    "There, there.",
+    "It's OK, it's over now.",
+    "You did it! I'm so proud of you.",
+    "You deserve some you time."
+]
+
+YOU_GO_GIRL = [
+    "You're the best!",
+    "You rock!",
+    "Whoooo!",
+    "Yeah!"
+]
+
 # define constants based on prod or test environment
 def bot_guild():
   return PROD_DISCORD_GUILD if _production else TEST_DISCORD_GUILD

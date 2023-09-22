@@ -3,19 +3,101 @@ bot.py
 
 This is where we define our bot object and setup_hook (replacement for on_ready)
 
-Dependencies: Constants, Components, Metadata
+Dependencies: Constants, Metadata
 
 """
+# import libraries
+import re
+
+# import discord
 import discord
 from discord.ext import commands
 
 # import constants
 from ptn.buttonrolebot._metadata import __version__
-from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK
+from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK, role_council, role_mod
 
-# import persistent buttons
-from ptn.buttonrolebot.views.ButtonCreator import DynamicButton
+# import classes
+# from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
 
+# import modules
+from ptn.buttonrolebot.modules.ErrorHandler import CustomError, on_generic_error
+
+
+"""
+Dynamic Button
+
+Depends on bot (for error handling), bot depends on it, can't figure out any other way to organise except putting it in here 🤷‍♀️
+I mean I could write a separate error handler for this, or I could NOT
+
+i'm so sorry kutu
+"""
+class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'button:role:(?P<role_id>[0-9]+):message:(?P<message_id>[0-9]+)'):
+    def __init__(self, role_id: int, message_id: int) -> None:
+        print("DynamicButton init")
+        super().__init__(
+            discord.ui.Button(
+                label='Assign Role',
+                style=discord.ButtonStyle.blurple,
+                custom_id=f'button:role:{role_id}:message:{message_id}'
+            )
+        )
+        self.role_id: int = role_id
+        self.message_id: int = message_id
+
+
+    # This is called when the button is clicked and the custom_id matches the template.
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /):
+        print("DynamicButton: from_custom_id called")
+        role_id = int(match['role_id'])
+        message_id = int(match['message_id'])
+        return cls(role_id, message_id)
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        print("DynamicButton: callback from:")
+        print(f'button:message:{self.message_id}:role:{self.role_id}')
+
+        print(f"Spamchannel is {spamchannel}")
+
+        try:
+            # get role object
+            role = discord.utils.get(interaction.guild.roles, id=self.role_id)
+
+            # check if user has it
+            print(f'Check whether user has role: "{role}"')
+            if role not in interaction.user.roles:
+                # rolercoaster giveth
+                await interaction.user.add_roles(role)
+                action = "now"
+
+            else:
+                # ...and rolercoaster taketh away
+                await interaction.user.remove_roles(role)
+                action = "no longer"
+
+            embed = discord.Embed(
+                description=f'You {action} have the <@&{role.id}> role.',
+                color=EMBED_COLOUR_OK
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        except Exception as e:
+            print(e)
+            try:
+                error = f"Role not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}>"
+                raise CustomError(error)
+            except Exception as e2:
+                print(e2)
+                error= f"User received message: {error}\nOriginal Error: ({e})"
+                await on_generic_error(spamchannel, interaction, error)
+            return
+
+
+"""
+Bot object
+"""
 # define bot object
 class ButtonRoleBot(commands.Bot):
     def __init__(self):
@@ -36,6 +118,7 @@ class ButtonRoleBot(commands.Bot):
             print(f'{bot.user.name} version: {__version__} has connected to Discord!')
             print('-----')
             devchannel = bot.get_channel(channel_botdev())
+            global spamchannel
             spamchannel = bot.get_channel(channel_botspam())
             embed = discord.Embed(
                 title="🟢 BUTTON ROLE BOT ONLINE",
@@ -54,3 +137,4 @@ class ButtonRoleBot(commands.Bot):
 
 
 bot = ButtonRoleBot()
+
