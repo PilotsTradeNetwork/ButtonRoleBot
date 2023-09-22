@@ -19,13 +19,20 @@ import discord
 # import local constants
 import ptn.buttonrolebot.constants as constants
 
+# import classes
+from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
+
 class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'button:message:(?P<message_id>[0-9]+):role:(?P<role_id>[0-9]+)'):
-    def __init__(self, message_id: int, role_id: int) -> None:
+    def __init__(self, button_data: RoleButtonData) -> None:
+        self.button_data = button_data
+        self.message: discord.Message = button_data.message
+        self.style: discord.ButtonStyle = button_data.button_style
+        self.role: discord.Role = button_data.role_object
         super().__init__(
             discord.ui.Button(
-                label='Do Thing',
-                style=discord.ButtonStyle.blurple,
-                custom_id=f'button:message:{message_id}:role:{role_id}',
+                label=self.button_data.label,
+                style=self.style,
+                custom_id=f'button:message:{self.message.id}:role:{self.role.id}',
                 emoji='🎇',
             )
         )

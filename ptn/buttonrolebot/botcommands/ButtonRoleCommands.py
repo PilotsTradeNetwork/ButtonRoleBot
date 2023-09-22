@@ -77,6 +77,14 @@ Uses @bot.tree instead of @command.tree
 @bot.tree.context_menu(name='Add Role Button')
 @check_roles(any_elevated_role)
 async def add_role_button(interaction: discord.Interaction, message: discord.Message):
+    # check message was sent by bot
+    if not message.author == bot.user:
+        try:
+            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
+
     try:
         # instantiate an empty instance of our RoleButtonData
         button_data = RoleButtonData()
@@ -147,7 +155,7 @@ class ButtonRoleCommands(commands.Cog):
 
         embed = discord.Embed(
             title='Generate an Embed',
-            description='Send a message with an Embed to this channel. Buttons can be attached to this embed to grant/remove roles.',
+            description='Send a message with an Embed to this channel. Buttons can be attached to this message to grant/remove roles.',
             color=constants.EMBED_COLOUR_QU
         )
 

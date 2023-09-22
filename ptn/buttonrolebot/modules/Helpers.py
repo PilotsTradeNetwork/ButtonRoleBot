@@ -15,6 +15,12 @@ from ptn.buttonrolebot.bot import bot
 # import constants
 from ptn.buttonrolebot.constants import bot_guild, channel_botspam
 
+# import views
+from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
+
+# import classes
+from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
+
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error
 
@@ -106,3 +112,14 @@ async def check_role_exists(interaction, role_id):
         except Exception as e:
             await on_generic_error(spamchannel, interaction, e)
         return None
+    
+# add role button to message
+# this one is kind of a big deal
+async def _add_role_button_to_message(interaction, button_data: RoleButtonData):
+    message: discord.Message = button_data.message
+    style: discord.ButtonStyle = button_data.button_style
+    role: discord.Role = button_data.role_object
+    view = discord.ui.View(timeout=None)
+    button = DynamicButton(
+        
+    )
