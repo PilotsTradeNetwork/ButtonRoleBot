@@ -4,6 +4,11 @@ A module for helper functions called by other modules.
 Depends on: ErrorHandler, Constants
 
 """
+# import os
+import os
+
+#import validators
+import validators
 
 # import discord.py
 import discord
@@ -14,7 +19,7 @@ from discord.ui import View
 from ptn.buttonrolebot.bot import bot, DynamicButton
 
 # import constants
-from ptn.buttonrolebot.constants import bot_guild, channel_botspam
+from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
@@ -81,6 +86,11 @@ async def get_guild():
     Return bot guild instance for use in get_member()
     """
     return bot.get_guild(bot_guild())
+
+
+def is_valid_extension(url):
+    _, ext = os.path.splitext(url)
+    return ext.lower() in VALID_EXTENSIONS and validators.url(url)
 
 
 # remove a field from an embed
