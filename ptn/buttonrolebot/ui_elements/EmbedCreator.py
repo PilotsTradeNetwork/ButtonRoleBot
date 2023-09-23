@@ -18,7 +18,7 @@ from ptn.buttonrolebot.bot import bot
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam, VALID_EXTENSIONS
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
@@ -26,7 +26,7 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 # import local modules
 from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Helpers import _remove_embed_field
+from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -153,11 +153,6 @@ class EmbedParamsModal(Modal):
         self.embed_data.embed_author_avatar = self.author_avatar.value if self.author_avatar.value else None
 
         # validate URLs
-        def is_valid_extension(url):
-            VALID_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
-            _, ext = os.path.splitext(url)
-            return ext.lower() in VALID_EXTENSIONS and validators.url(url)
-
         if not is_valid_extension(self.embed_data.embed_thumbnail) and self.embed_data.embed_thumbnail is not None:
             error = f"Thumbnail URL not valid: {self.embed_data.embed_thumbnail}"
             print(error)
