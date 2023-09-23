@@ -69,11 +69,13 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
             if role not in interaction.user.roles:
                 # rolercoaster giveth
                 await interaction.user.add_roles(role)
+                print(f'➕ Gave {interaction.user} the {role} role')
                 action = "now"
 
             else:
                 # ...and rolercoaster taketh away
                 await interaction.user.remove_roles(role)
+                print(f'➖ Removed {interaction.user} from the {role} role')
                 action = "no longer"
 
             embed = discord.Embed(

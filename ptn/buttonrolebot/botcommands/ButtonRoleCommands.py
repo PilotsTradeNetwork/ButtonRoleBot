@@ -193,8 +193,3 @@ class ButtonRoleCommands(commands.Cog):
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-
-    @app_commands.command(name="testme")
-    async def _testme(self, interaction: discord.Interaction):
-        view = ChooseRoleView()
-        await interaction.response.send_message("Hi there", view=view, ephemeral=True)
