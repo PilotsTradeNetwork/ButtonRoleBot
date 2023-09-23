@@ -60,6 +60,8 @@ EMOJI_NOT_DONE = '⭕'
 
 HEX_COLOR_PATTERN = r'^0x[0-9A-Fa-f]{6}$'
 
+VALID_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+
 BUTTON_CHOOSE_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/2023/09/two_buttons_cropped.png"
 BUTTON_SWEAT_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/2023/09/two_buttons_sweating_guy.png"
 
