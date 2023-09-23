@@ -4,7 +4,7 @@ Define classes for Embed Creator
 Depends on: constants, Embeds, ErrorHandler, Helpers
 
 """
-
+import os
 # import libraries
 import re
 import validators
@@ -18,7 +18,7 @@ from ptn.buttonrolebot.bot import bot
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam, VALID_EXTENSIONS
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
@@ -26,7 +26,7 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 # import local modules
 from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Helpers import _remove_embed_field
+from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -98,7 +98,7 @@ class EmbedParamsModal(Modal):
         self.embed_data: EmbedData = embed_data
         self.view: View = view
 
-    
+
     color = discord.ui.TextInput(
         label='Set the Embed border colour',
         placeholder='Enter a hex colour code in the format 0x00AA00 to use for the embed border.',
@@ -132,7 +132,7 @@ class EmbedParamsModal(Modal):
                 try:
                     color_int = int(self.color.value, 16)  # Convert hex string to integer
                     self.embed_data.embed_color = color_int
-                except ValueError as e: 
+                except ValueError as e:
                     print(e)
                     try:
                         raise GenericError(e)
@@ -157,7 +157,7 @@ class EmbedParamsModal(Modal):
         self.embed_data.embed_author_avatar = self.author_avatar.value if self.author_avatar.value else None
 
         # validate URLs
-        if self.embed_data.embed_thumbnail is not None and not validators.url(self.embed_data.embed_thumbnail):
+        if not is_valid_extension(self.embed_data.embed_thumbnail) and self.embed_data.embed_thumbnail is not None:
             error = f"Thumbnail URL not valid: {self.embed_data.embed_thumbnail}"
             print(error)
             try:
@@ -166,7 +166,7 @@ class EmbedParamsModal(Modal):
                 await on_generic_error(spamchannel, interaction, e)
             return
 
-        if self.embed_data.embed_author_avatar is not None and not validators.url(self.embed_data.embed_author_avatar):
+        if not is_valid_extension(self.embed_data.embed_author_avatar) and self.embed_data.embed_author_avatar is not None:
             error = f"Author Avatar URL not valid: {self.embed_data.embed_author_avatar}"
             print(error)
             try:
