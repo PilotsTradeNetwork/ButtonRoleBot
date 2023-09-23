@@ -69,7 +69,11 @@ class EmbedGenButtons(View):
         try:
             print("Calling function to generate Embed...")
             send_embed = await _generate_embed_from_dict(self.embed_data)
+
+            print("Sending completed Embed...")
             message = await interaction.channel.send(embed=send_embed)
+            print(f"Embed sent to {interaction.channel} by {interaction.user}")
+            
             embed = discord.Embed(
                 description=f"✅ **Embed sent**. Message ID of containing message:\n"
                             f"```{message.id}```",
@@ -92,7 +96,7 @@ class EmbedParamsModal(Modal):
         super().__init__(title=title, timeout=timeout)
         self.original_embed = original_embed
         self.embed_data: EmbedData = embed_data
-        self.view = view
+        self.view: View = view
 
     
     color = discord.ui.TextInput(
@@ -192,11 +196,10 @@ class EmbedParamsModal(Modal):
             field_data += f'\n{constants.EMOJI_NOT_DONE} Author Avatar'
 
         # remove old params field if necessary
-        embed = _remove_embed_field(self.original_embed, 'Embed Parameters')
+        embed = _remove_embed_field(self.original_embed, 'Embed Parameters') # TODO fix this whoops
 
         self.original_embed.add_field(name="Embed Parameters", value=field_data)
 
-        # Edit embed fields to detail contents of params TODO
         # remove the button we pressed to get here
         self.view.remove_item(self.view.set_embed_params_button)
 
@@ -300,8 +303,6 @@ class EmbedContentModal(Modal):
 
         # update the view in case we added the send button
         await interaction.response.edit_message(embed=self.original_embed, view=self.view)
-
-        # TODO Edit embed fields to confirm we have content TODO
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         try:
