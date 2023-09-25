@@ -4,9 +4,9 @@ Define classes for Embed Creator
 Depends on: constants, Embeds, ErrorHandler, Helpers
 
 """
-import os
 # import libraries
 import re
+from discord.interactions import Interaction
 import validators
 
 # import discord.py
@@ -18,10 +18,11 @@ from ptn.buttonrolebot.bot import bot
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, VALID_EXTENSIONS
+from ptn.buttonrolebot.constants import channel_botspam
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
+from ptn.buttonrolebot.classes.FieldData import FieldData
 
 # import local modules
 from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
@@ -30,17 +31,229 @@ from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_exte
 
 spamchannel = bot.get_channel(channel_botspam())
 
+"""
+EMBED CREATOR
+
+Give the user all the tools to create and customise an embed using buttons and modals.
+BUTTONS
+Row 1:
+- Title
+- Description - mandatory
+- Footer
+- Image URL
+Row 2:
+- Color
+- Thumbnail URL
+- Author Name
+- Author Avatar URL
+
+MODALS
+Each button opens a modal that accepts user input for that field and saves it to an instance of EmbedData via set_attribute().
+
+Modal is a common function that uses calling function to decide its parameters.
+
+Default value for the modal is the existing content of the class attribute, allowing users to edit their input post-hoc.
+
+EMBEDS
+- explanation embed as instruction_embed - remains unchanged
+- preview Embed as preview_embed:
+  - appended to embed list after instruction_embed
+  - placeholder: "Preview"
+  - updated with embed_data each time modal is submitted
+"""
+
+
 # buttons for embed generator
 class EmbedGenButtons(View):
-    def __init__(self, original_embed):
+    def __init__(self, instruction_embed, embed_data):
         super().__init__(timeout=None)
-        self.original_embed = original_embed # our original embed to play around with
-        self.embed_data = EmbedData() # an instance of EmbedData to send to our embed creators
-        self.embed_data.embed_color = constants.EMBED_COLOUR_PTN_DEFAULT # set default color
-        self.remove_item(self.set_embed_send_button) # remove the send button until we have something to send
+        self.instruction_embed: discord.Embed = instruction_embed # our original embed
+        self.embed_data: EmbedData = embed_data # an instance of EmbedData to send to our embed creators
+        # self.remove_item(self.set_embed_send_button) # remove the send button until we have something to send
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="✖", custom_id="embed_gen_cancel_button")
-    async def set_embed_cancel_button(self, interaction, button):
+
+    @discord.ui.button(label="Title", style=discord.ButtonStyle.secondary, emoji="🏷", custom_id="embed_gen_title_button", row=0)
+    async def set_embed_title_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_title_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_title',
+            'title': 'Set Title',
+            'label': 'Enter Title',
+            'placeholder': 'Titles and footers accept text and unicode emojis only.',
+            'max_length': 256,
+            'default': self.embed_data.embed_title
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+
+    @discord.ui.button(label="Main Text", style=discord.ButtonStyle.primary, emoji="📄", custom_id="embed_gen_desc_button", row=0)
+    async def set_embed_desc_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_desc_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_description',
+            'title': 'Set Main Content',
+            'label': 'Enter Main Text',
+            'placeholder': 'Normal Discord markdown works, but mentions and custom emojis require full code.',
+            'required': True,
+            'max_length': 4000,
+            'default': self.embed_data.embed_description
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+
+    @discord.ui.button(label="Main Image", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_img_button", row=0)
+    async def set_embed_img_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_img_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_image_url',
+            'title': 'Set Main Image',
+            'label': 'Enter Image URL',
+            'placeholder': 'Enter the image\'s URL or leave blank for none.',
+            'default': self.embed_data.embed_image_url
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+    @discord.ui.button(label="Footer", style=discord.ButtonStyle.secondary, emoji="🦶", custom_id="embed_gen_footer_button", row=0)
+    async def set_embed_footer_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_footer_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_footer',
+            'title': 'Set Footer',
+            'label': 'Enter Footer Text',
+            'placeholder': 'Titles and footers accept text and unicode emojis only.',
+            'max_length': 2000,
+            'default': self.embed_data.embed_footer
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+
+    @discord.ui.button(label="Color", style=discord.ButtonStyle.secondary, emoji="🎨", custom_id="embed_gen_color_button", row=1)
+    async def set_embed_color_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_color_button click")
+
+        hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
+        print(f'Hex color: {hex_color}')
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_color',
+            'title': 'Set Embed Border Color',
+            'label': 'Color',
+            'placeholder': 'Enter a hex colour code in the format 0x00AA00 to use for the embed border.',
+            'max_length': 8,
+            'default': hex_color
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+    @discord.ui.button(label="Thumbnail", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_thumb_button", row=1)
+    async def set_embed_thumb_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_thumb_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_thumbnail_url',
+            'title': 'Set Thumbnail Image',
+            'label': 'Enter Thumbnail URL',
+            'placeholder': 'Enter the image\'s URL or leave blank for none.',
+            'default': self.embed_data.embed_thumbnail_url
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+    @discord.ui.button(label="Author", style=discord.ButtonStyle.secondary, emoji="🧑", custom_id="embed_gen_author_button", row=1)
+    async def set_embed_author_button(self, interaction: discord.Interaction, button):
+        print("Received set_embedset_embed_author_button_avatar_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_author_name',
+            'title': 'Set Author Name',
+            'label': 'Enter Author Name',
+            'placeholder': 'Adds an Author field to the embed above the Title.',
+            'max_length': 128,
+            'default': self.embed_data.embed_author_name
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+    @discord.ui.button(label="Avatar", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_avatar_button", row=1)
+    async def set_embed_avatar_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_avatar_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_author_avatar_url',
+            'title': 'Set Author Avatar',
+            'label': 'Enter Avatar URL',
+            'placeholder': 'Avatars will only display if an Author is also set.',
+            'default': self.embed_data.embed_author_avatar_url
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+
+    @discord.ui.button(label="✗ Cancel", style=discord.ButtonStyle.danger, custom_id="embed_gen_cancel_button", row=2)
+    async def set_embed_cancel_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_cancel_button click")
         embed = discord.Embed(
             description="❎ **Embed generation cancelled**.",
@@ -49,26 +262,12 @@ class EmbedGenButtons(View):
         embed.set_footer(text="You can dismiss this message.")
         await interaction.response.edit_message(embed=embed, view=None)
 
-    @discord.ui.button(label="Set Params", style=discord.ButtonStyle.secondary, emoji="⚙", custom_id="embed_params_button")
-    async def set_embed_params_button(self, interaction, button):
-        print("Received set_embed_params_button click")
-
-        await interaction.response.send_modal(EmbedParamsModal(self.original_embed, self.embed_data, view=self))
-        print(self.embed_data)
-
-    @discord.ui.button(label="Set Content", style=discord.ButtonStyle.primary, emoji="🖼", custom_id="embed_content_button")
-    async def set_embed_content_button(self, interaction, button):
-        print("Received set_embed_content_button click")
-
-        await interaction.response.send_modal(EmbedContentModal(self.original_embed, self.embed_data, view=self))
-        print(self.embed_data)
-
-    @discord.ui.button(label="Send Embed", style=discord.ButtonStyle.success, emoji="✅", custom_id="embed_gen_send_button")
+    @discord.ui.button(label="✔ Send Embed", style=discord.ButtonStyle.success, custom_id="embed_gen_send_button", row=2)
     async def set_embed_send_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_send_button click")
         try:
             print("Calling function to generate Embed...")
-            send_embed = await _generate_embed_from_dict(self.embed_data)
+            send_embed = _generate_embed_from_dict(self.embed_data)
 
             print("Sending completed Embed...")
             message = await interaction.channel.send(embed=send_embed)
@@ -91,120 +290,95 @@ class EmbedGenButtons(View):
 
 
 # modal for embed parameters
-class EmbedParamsModal(Modal):
-    def __init__(self, original_embed, embed_data, view, title = 'Set Embed Parameters', timeout = None) -> None:
-        super().__init__(title=title, timeout=timeout)
-        self.original_embed = original_embed
+class EmbedContentModal(Modal):
+    def __init__(self, instruction_embed, field_data: FieldData, embed_data, view, timeout = None) -> None:
+        super().__init__(title=field_data.title, timeout=timeout)
+        print('Defining variables')
+        self.instruction_embed: discord.Embed = instruction_embed
         self.embed_data: EmbedData = embed_data
         self.view: View = view
+        self.field_data: FieldData = field_data
+        # define our field data
+        print('Defining field data')
+        self.embed_field.label = self.field_data.label
+        self.embed_field.placeholder = self.field_data.placeholder
+        self.embed_field.style = self.field_data.style
+        self.embed_field.required = self.field_data.required
+        self.embed_field.max_length = self.field_data.max_length
+        self.embed_field.default = self.field_data.default
 
-
-    color = discord.ui.TextInput(
-        label='Set the Embed border colour',
-        placeholder='Enter a hex colour code in the format 0x00AA00 to use for the embed border.',
-        required=False,
-        max_length=8,
-    )
-    thumbnail = discord.ui.TextInput(
-        label='Thumbnail Image URL.',
-        placeholder='Enter the URL of the image you want to use, or leave blank for none.',
-        required=False,
-        max_length=512,
-    )
-    author_name = discord.ui.TextInput(
-        label='Author Name',
-        placeholder='Enter an author name for the Embed.',
-        required=False,
-        max_length=256,
-    )
-    author_avatar = discord.ui.TextInput(
-        label='Author Avatar Image URL',
-        placeholder='Requires Author Name to be set.',
-        required=False,
-        max_length=512,
+    embed_field = discord.ui.TextInput(
+        label="Label"
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        print(f'Received EmbedContentModal submit for {self.field_data.attr}')
+
+        if self.field_data.attr == 'embed_color':
+            print('Received COLOR input')
         # turn color input into an INT and store it
-        if self.color.value:
-            print(f"User entered color as {self.color.value}, we'll check it's valid and convert it to int")
-            if re.match(constants.HEX_COLOR_PATTERN, self.color.value):
-                try:
-                    color_int = int(self.color.value, 16)  # Convert hex string to integer
-                    self.embed_data.embed_color = color_int
-                except ValueError as e:
-                    print(e)
+            if self.embed_field.value:
+                print(f"User entered color as {self.embed_field.value}, we'll check it's valid and convert it to int")
+                if re.match(constants.HEX_COLOR_PATTERN, self.embed_field.value):
+                    print('Received valid hex match')
                     try:
-                        raise GenericError(e)
+                        color_int = int(self.embed_field.value, 16)  # Convert hex string to integer
+                        print(f'Converted {self.embed_field.value} to {color_int}')
+                        self.embed_data.embed_color = color_int
+                        print(self.embed_data.embed_color)
+                    except ValueError as e:
+                        print(e)
+                        try:
+                            raise GenericError(e)
+                        except Exception as e:
+                            await on_generic_error(spamchannel, interaction, e)
+                        pass
+                else:
+                    error = f"'{self.embed_field.value}' is not a valid hex color code."
+                    try:
+                        raise CustomError(error)
                     except Exception as e:
                         await on_generic_error(spamchannel, interaction, e)
-                    pass
+                    return
             else:
-                error = f"'{self.color.value}' is not a valid hex color code."
-                try:
-                    raise CustomError(error)
-                except Exception as e:
-                    await on_generic_error(spamchannel, interaction, e)
-                return
-        else:
-            print("No user color entry, assigning default.")
-            self.embed_data.embed_color = constants.EMBED_COLOUR_PTN_DEFAULT
-            print(self.embed_data.embed_color)
+                print("No user color entry, re-assigning default.")
+                self.embed_data.embed_color = constants.EMBED_COLOUR_PTN_DEFAULT
+                print(self.embed_data.embed_color)
 
-        # store data from the form fields into our EmbedData instance
-        self.embed_data.embed_thumbnail = self.thumbnail.value if self.thumbnail.value else None
-        self.embed_data.embed_author_name = self.author_name.value if self.author_name.value else None
-        self.embed_data.embed_author_avatar = self.author_avatar.value if self.author_avatar.value else None
+        else: # i.e. if anything other than color is being set
+            print('Checking if URL type')
+            string_to_check = str(self.field_data.attr)
+            if "url" in string_to_check:
+                print('Validating URLs')
+                # validate image URLs
+                if not is_valid_extension(self.embed_field.value) and self.embed_field.value is not None:
+                    error = f"Image not valid: {self.embed_field.value}"
+                    print(error)
+                    try:
+                        raise CustomError(error)
+                    except Exception as e:
+                        await on_generic_error(spamchannel, interaction, e)
+                    return
 
-        # validate URLs
-        if not is_valid_extension(self.embed_data.embed_thumbnail) and self.embed_data.embed_thumbnail is not None:
-            error = f"Thumbnail URL not valid: {self.embed_data.embed_thumbnail}"
-            print(error)
-            try:
-                raise CustomError(error)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
-
-        if not is_valid_extension(self.embed_data.embed_author_avatar) and self.embed_data.embed_author_avatar is not None:
-            error = f"Author Avatar URL not valid: {self.embed_data.embed_author_avatar}"
-            print(error)
-            try:
-                raise CustomError(error)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
-
-        field_data = ""
-
-        if self.embed_data.embed_color is not None and self.embed_data.embed_color != constants.EMBED_COLOUR_PTN_DEFAULT:
-            field_data += f'{constants.EMOJI_DONE} Color'
-        else:
-            field_data += f'{constants.EMOJI_NOT_DONE} Color'
-        if self.embed_data.embed_thumbnail is not None:
-            field_data += f'\n{constants.EMOJI_DONE} Thumbnail URL'
-        else:
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Thumbnail URL'
-        if self.embed_data.embed_author_name is not None:
-            field_data += f'\n{constants.EMOJI_DONE} Author Name'
-            if self.embed_data.embed_author_avatar is not None:
-                field_data += f'\n{constants.EMOJI_DONE} Author Avatar'
+            print('Updating embed_data')
+            # define our embed_data attribute to the user-inputted value
+            if self.embed_field.value:
+                self.embed_data.set_attribute(self.field_data.attr, self.embed_field.value)
             else:
-                field_data += f'\n{constants.EMOJI_NOT_DONE} Author Avatar'
-        else:
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Author Name'
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Author Avatar'
+                self.embed_data.set_attribute(self.field_data.attr, None)
 
-        # remove old params field if necessary
-        embed = _remove_embed_field(self.original_embed, 'Embed Parameters') # TODO fix this whoops
 
-        self.original_embed.add_field(name="Embed Parameters", value=field_data)
+        print(f'▶ Updated embed_data: {self.embed_data}')
 
-        # remove the button we pressed to get here
-        self.view.remove_item(self.view.set_embed_params_button)
+        # update our preview embed
+        print('Updating preview embed')
+        preview_embed = _generate_embed_from_dict(self.embed_data)
+
+        embeds = [self.instruction_embed, preview_embed]
 
         # update the view in case we added the send button
-        await interaction.response.edit_message(embed=self.original_embed, view=self.view)
+        print("Sending updated embeds")
+        await interaction.response.edit_message(embeds=embeds, view=self.view)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         try:
@@ -213,100 +387,3 @@ class EmbedParamsModal(Modal):
             await on_generic_error(spamchannel, interaction, e)
         return
 
-
-# modal for embed content
-class EmbedContentModal(Modal):
-    def __init__(self, original_embed, embed_data, view, title = 'Set Embed Content', timeout = None) -> None:
-        super().__init__(title=title, timeout=timeout)
-        self.original_embed = original_embed
-        self.view = view
-        self.embed_data: EmbedData = embed_data
-
-    embed_title = discord.ui.TextInput(
-        label='Embed title',
-        placeholder='Leave blank for none.',
-        required=False,
-        max_length=256,
-    )
-    embed_description = discord.ui.TextInput(
-        label='Embed main text.',
-        style=discord.TextStyle.long,
-        placeholder='Normal Discord markdown works, but mentions and custom emojis require full code.',
-        required=True,
-        max_length=4000,
-    )
-    embed_footer = discord.ui.TextInput(
-        label='Embed footer text.',
-        style=discord.TextStyle.long,
-        placeholder='Titles and footers accept text and unicode emojis only.',
-        required=False,
-        max_length=2000,
-    )
-    embed_image = discord.ui.TextInput(
-        label='Embed image',
-        placeholder='Enter the image\'s URL or leave blank for none.',
-        required=False,
-        max_length=512,
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        # store data from the form fields into our EmbedData instance
-        self.embed_data.embed_title = self.embed_title.value if self.embed_title.value else None
-        self.embed_data.embed_description = self.embed_description.value if self.embed_description.value else None
-        self.embed_data.embed_footer = self.embed_footer.value if self.embed_footer.value else None
-        self.embed_data.embed_image = self.embed_image.value if self.embed_image.value else None
-        print(self.embed_data)
-
-        # validate URLs
-        if self.embed_data.embed_image is not None and not validators.url(self.embed_data.embed_image):
-            error = f"Image URL not valid: {self.embed_data.embed_image}"
-            print(error)
-            try:
-                raise CustomError(error)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
-
-        field_data = ""
-
-        if self.embed_data.embed_title is not None:
-            field_data += f'{constants.EMOJI_DONE} Title'
-        else:
-            field_data += f'{constants.EMOJI_NOT_DONE} Title'
-        if self.embed_data.embed_description is not None:
-            field_data += f'\n{constants.EMOJI_DONE} Main text'
-        else:
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Main text'
-        if self.embed_data.embed_footer is not None:
-            field_data += f'\n{constants.EMOJI_DONE} Footer'
-        else:
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Footer'
-        if self.embed_data.embed_image is not None:
-            field_data += f'\n{constants.EMOJI_DONE} Main Image URL'
-        else:
-            field_data += f'\n{constants.EMOJI_NOT_DONE} Main Image URL'
-
-        # remove old content field if necessary
-        embed = _remove_embed_field(self.original_embed, 'Embed Content')
-
-        self.original_embed.add_field(name="Embed Content", value=field_data)
-
-        # check if we have a send button yet
-        button_already_exists = any(isinstance(item, discord.ui.Button) and item.custom_id == 'embed_gen_send_button' for item in self.view.children)
-
-        if not button_already_exists:
-            # attach a send button
-            self.view.add_item(self.view.set_embed_send_button)
-
-        # remove the button we pressed to get here
-        self.view.remove_item(self.view.set_embed_content_button)
-
-        # update the view in case we added the send button
-        await interaction.response.edit_message(embed=self.original_embed, view=self.view)
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        try:
-            raise GenericError(error)
-        except Exception as e:
-            await on_generic_error(spamchannel, interaction, e)
-        return
