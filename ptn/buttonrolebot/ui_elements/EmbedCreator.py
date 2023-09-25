@@ -65,7 +65,9 @@ EMBEDS
 
 # buttons for embed generator
 class EmbedGenButtons(View):
-    def __init__(self, instruction_embed, embed_data):
+    def __init__(self, instruction_embed, embed_data, message, action):
+        self.action = action
+        self.message: discord.Message = message
         super().__init__(timeout=None)
         self.instruction_embed: discord.Embed = instruction_embed # our original embed
         self.embed_data: EmbedData = embed_data # an instance of EmbedData to send to our embed creators
@@ -269,16 +271,30 @@ class EmbedGenButtons(View):
             print("Calling function to generate Embed...")
             send_embed = _generate_embed_from_dict(self.embed_data)
 
-            print("Sending completed Embed...")
-            message = await interaction.channel.send(embed=send_embed)
-            print(f"Embed sent to {interaction.channel} by {interaction.user}")
-            
-            embed = discord.Embed(
-                description=f"✅ **Embed sent**. Message ID of containing message:\n"
-                            f"```{message.id}```",
-                color=constants.EMBED_COLOUR_OK
-            )
-            embed.set_footer(text="You can dismiss this message.")
+
+            if self.action == 'edit':
+                print("Updating edited Embed...")
+                await self.message.edit(embed=send_embed)
+
+                embed = discord.Embed(
+                    description=f"✅ **Embed updated**: {self.message.jump_url}",
+                    color=constants.EMBED_COLOUR_OK
+                )
+                embed.set_footer(text="You can dismiss this message.")
+
+            else:
+                print("Sending completed Embed...")
+                message = await interaction.channel.send(embed=send_embed)
+                print(f"Embed sent to {interaction.channel} by {interaction.user}")
+                
+                embed = discord.Embed(
+                    description=f"✅ **Embed sent**. Message ID of containing message:\n"
+                                f"```{message.id}```",
+                    color=constants.EMBED_COLOUR_OK
+                )
+                embed.set_footer(text="You can dismiss this message.")
+
+            print("Updating interaction response...")
             await interaction.response.edit_message(embed=embed, view=None)
 
         except Exception as e:
