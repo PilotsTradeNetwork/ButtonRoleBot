@@ -22,7 +22,7 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 
 # generate an embed from a dict
-async def _generate_embed_from_dict(embed_data: EmbedData):
+def _generate_embed_from_dict(embed_data: EmbedData):
     print("Called _generate_embed_from_dict")
     print(embed_data)
 
@@ -41,16 +41,16 @@ async def _generate_embed_from_dict(embed_data: EmbedData):
     if embed_data.embed_footer:
         embed.set_footer(text=embed_data.embed_footer)
     print("Add image")
-    if embed_data.embed_image:
-        embed.set_image(url=embed_data.embed_image)
+    if embed_data.embed_image_url:
+        embed.set_image(url=embed_data.embed_image_url)
     print("Add thumbnail")
-    if embed_data.embed_thumbnail:
-        embed.set_thumbnail(url=embed_data.embed_thumbnail)
+    if embed_data.embed_thumbnail_url:
+        embed.set_thumbnail(url=embed_data.embed_thumbnail_url)
     print("Add author")
     if embed_data.embed_author_name:
         print("Add author avatar")
-        if embed_data.embed_author_avatar:
-            embed.set_author(name=embed_data.embed_author_name, icon_url=embed_data.embed_author_avatar)
+        if embed_data.embed_author_avatar_url:
+            embed.set_author(name=embed_data.embed_author_name, icon_url=embed_data.embed_author_avatar_url)
         else:
             embed.set_author(name=embed_data.embed_author_name)
     print("Set color")
