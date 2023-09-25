@@ -94,7 +94,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
 
     @discord.ui.button(label="Main Text", style=discord.ButtonStyle.primary, emoji="📄", custom_id="embed_gen_desc_button", row=0)
@@ -107,6 +107,7 @@ class EmbedGenButtons(View):
             'title': 'Set Main Content',
             'label': 'Enter Main Text',
             'placeholder': 'Normal Discord markdown works, but mentions and custom emojis require full code.',
+            'style': discord.TextStyle.paragraph,
             'required': True,
             'max_length': 4000,
             'default': self.embed_data.embed_description
@@ -118,7 +119,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
 
     @discord.ui.button(label="Main Image", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_img_button", row=0)
@@ -140,7 +141,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
     @discord.ui.button(label="Footer", style=discord.ButtonStyle.secondary, emoji="🦶", custom_id="embed_gen_footer_button", row=0)
     async def set_embed_footer_button(self, interaction: discord.Interaction, button):
@@ -162,7 +163,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
 
     @discord.ui.button(label="Color", style=discord.ButtonStyle.secondary, emoji="🎨", custom_id="embed_gen_color_button", row=1)
@@ -178,6 +179,7 @@ class EmbedGenButtons(View):
             'title': 'Set Embed Border Color',
             'label': 'Color',
             'placeholder': 'Enter a hex colour code in the format 0x00AA00 to use for the embed border.',
+            'style': discord.TextStyle.short,
             'max_length': 8,
             'default': hex_color
         }
@@ -188,7 +190,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
     @discord.ui.button(label="Thumbnail", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_thumb_button", row=1)
     async def set_embed_thumb_button(self, interaction: discord.Interaction, button):
@@ -209,7 +211,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
     @discord.ui.button(label="Author", style=discord.ButtonStyle.secondary, emoji="🧑", custom_id="embed_gen_author_button", row=1)
     async def set_embed_author_button(self, interaction: discord.Interaction, button):
@@ -221,6 +223,7 @@ class EmbedGenButtons(View):
             'title': 'Set Author Name',
             'label': 'Enter Author Name',
             'placeholder': 'Adds an Author field to the embed above the Title.',
+            'style': discord.TextStyle.short,
             'max_length': 128,
             'default': self.embed_data.embed_author_name
         }
@@ -231,7 +234,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
     @discord.ui.button(label="Avatar", style=discord.ButtonStyle.secondary, emoji="🖼", custom_id="embed_gen_avatar_button", row=1)
     async def set_embed_avatar_button(self, interaction: discord.Interaction, button):
@@ -252,7 +255,7 @@ class EmbedGenButtons(View):
 
         print(f'Sending modal embed data: {self.embed_data}')
 
-        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, view=self))
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
     @discord.ui.button(label="✗ Cancel", style=discord.ButtonStyle.danger, custom_id="embed_gen_cancel_button", row=2)
     async def set_embed_cancel_button(self, interaction: discord.Interaction, button):
@@ -267,6 +270,14 @@ class EmbedGenButtons(View):
     @discord.ui.button(label="✔ Send Embed", style=discord.ButtonStyle.success, custom_id="embed_gen_send_button", row=2)
     async def set_embed_send_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_send_button click")
+
+        if not self.embed_data.embed_title and not self.embed_data.embed_description:
+            error = 'Your embed must have at least a title or main text to be valid.'
+            try:
+                raise CustomError(error)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)       
+
         try:
             print("Calling function to generate Embed...")
             send_embed = _generate_embed_from_dict(self.embed_data)
@@ -307,13 +318,14 @@ class EmbedGenButtons(View):
 
 # modal for embed parameters
 class EmbedContentModal(Modal):
-    def __init__(self, instruction_embed, field_data: FieldData, embed_data, view, timeout = None) -> None:
+    def __init__(self, instruction_embed, field_data: FieldData, embed_data, button, view, timeout = None) -> None:
         super().__init__(title=field_data.title, timeout=timeout)
         print('Defining variables')
         self.instruction_embed: discord.Embed = instruction_embed
         self.embed_data: EmbedData = embed_data
         self.view: View = view
         self.field_data: FieldData = field_data
+        self.button: discord.ui.Button = button
         # define our field data
         print('Defining field data')
         self.embed_field.label = self.field_data.label
@@ -391,6 +403,11 @@ class EmbedContentModal(Modal):
         preview_embed = _generate_embed_from_dict(self.embed_data)
 
         embeds = [self.instruction_embed, preview_embed]
+
+        # update button style
+        if self.embed_field.value:
+            print("Updating button style...")
+            self.button.style = discord.ButtonStyle.success
 
         # update the view in case we added the send button
         print("Sending updated embeds")

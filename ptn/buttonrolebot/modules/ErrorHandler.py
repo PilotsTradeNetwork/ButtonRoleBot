@@ -31,6 +31,8 @@ class CommandRoleError(app_commands.CheckFailure): # role check error
         super().__init__(permitted_roles, formatted_role_list, "Role check error raised")
     pass
 
+class CommandPermissionError(app_commands.CheckFailure): # channel send permission failure
+    pass
 
 class GenericError(Exception): # generic error
     pass
@@ -136,6 +138,16 @@ async def on_app_command_error(
                 )
             print("notify user")
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif isinstance(error, CommandPermissionError):
+            embed = discord.Embed(
+                description="❌ You need permission to send messages in this channel to use this command.",
+                color=constants.EMBED_COLOUR_ERROR
+            )
+            try:
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            except:
+                await interaction.followup.send(embed=embed, ephemeral=True)           
 
         elif isinstance(error, CustomError):
             message = error.message

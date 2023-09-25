@@ -1,4 +1,4 @@
-from ptn.buttonrolebot.constants import EMBED_COLOUR_PTN_DEFAULT
+from ptn.buttonrolebot.constants import EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
 
 class EmbedData:
 
@@ -15,7 +15,7 @@ class EmbedData:
             info_dict = dict()
 
         self.embed_title = info_dict.get('embed_title', None)
-        self.embed_description = info_dict.get('embed_description', 'Preview of your Embed (replace with your own text)')
+        self.embed_description = info_dict.get('embed_description', DEFAULT_EMBED_DESC)
         self.embed_image_url = info_dict.get('embed_image_url', None)
         self.embed_footer = info_dict.get('embed_footer', None)
         self.embed_thumbnail_url = info_dict.get('embed_thumbnail_url', None)
