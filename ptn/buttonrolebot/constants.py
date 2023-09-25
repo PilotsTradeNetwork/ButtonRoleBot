@@ -39,6 +39,10 @@ PROD_CHANNEL_BOTSPAM = 801258393205604372 # PTN bot-spam channel
 PROD_CHANNEL_BOTDEV = 1153789139938988083 # PTN channel related to development for buttonrolebot
 PROD_ROLE_COUNCIL = 800091021852803072 # PTN Council role
 PROD_ROLE_MOD = 813814494563401780 # PTN Mod role
+PROD_ROLE_CMENTOR = 863521103434350613 # PTN CM role
+PROD_ROLE_SOMMELIER = 838520893181263872 # PTN Sommelier role
+PROD_ROLE_FOPERATIVE = 948206870491959317 # PTN Faction Operative role
+PROD_EMOJI_O7 = 806138784294371368 # PTN :o7: emoji
 
 
 # Testing variables
@@ -47,6 +51,10 @@ TEST_CHANNEL_BOTSPAM = 1152273868073996298 # PANTS bot spam channel
 TEST_CHANNEL_BOTDEV = 1153794231438168095 # PANTS channel related to development for buttonrolebot
 TEST_ROLE_COUNCIL = 877586918228000819 # PANTS Council role
 TEST_ROLE_MOD = 903292469049974845 # PANTS Mod role
+TEST_ROLE_CMENTOR = 877586763672072193 # PANTS CM role
+TEST_ROLE_SOMMELIER = 849907019502059530 # PANTS Sommelier role
+TEST_ROLE_FOPERATIVE = 1155985589200502844 # PANTS Faction Operative role
+TEST_EMOJI_O7 = 903744117144698950 # PANTS :o7: emoji
 
 
 # Embed colours
@@ -127,6 +135,38 @@ def role_council():
 def role_mod():
     return PROD_ROLE_MOD if _production else TEST_ROLE_MOD
 
+def role_cmentor():
+    return PROD_ROLE_CMENTOR if _production else TEST_ROLE_CMENTOR
 
-any_elevated_role = [role_council(), role_mod()]
+def role_somm():
+    return PROD_ROLE_SOMMELIER if _production else TEST_ROLE_SOMMELIER
+
+def role_foperative():
+    return PROD_ROLE_FOPERATIVE if _production else TEST_ROLE_FOPERATIVE
+
+def o7_emoji():
+    return PROD_EMOJI_O7 if _production else TEST_EMOJI_O7
+
+
+DEFAULT_EMBED_DESC = f"""
+# A preview of your Embed will appear here.
+You can use normal Discord markdown to format it, such as:
+Headings:
+`# A preview of your Embed will appear here`
+- Bullets:
+`- Bullets:`
+**bold** *italics* _underline_ ~~strikethrough~~: 
+`**bold** *italics* _underline_ ~~strikethrough~~`
+``` `Code blocks` ```
+`Code blocks`
+
+You can use role mentions via ID code, e.g. <@&{role_council()}> `<@&{role_council()}>`. (Note mentions in an embed do not ping or produce a notification.)
+
+You can use custom server emojis by ID code, e.g. <:o7:{o7_emoji()}> `<:o7:{o7_emoji()}>`.
+
+Regular emojis can be used by emoji keyboard or Discord shortcut, e.g. :wave: `:wave:`
+"""
+
+
+any_elevated_role = [role_council(), role_mod(), role_cmentor(), role_somm(), role_foperative()]
 

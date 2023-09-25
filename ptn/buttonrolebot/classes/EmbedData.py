@@ -1,3 +1,5 @@
+from ptn.buttonrolebot.constants import EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
+
 class EmbedData:
 
     def __init__(self, info_dict=None):
@@ -13,13 +15,14 @@ class EmbedData:
             info_dict = dict()
 
         self.embed_title = info_dict.get('embed_title', None)
-        self.embed_description = info_dict.get('embed_description', None)
-        self.embed_image = info_dict.get('embed_image', None)
+        self.embed_description = info_dict.get('embed_description', DEFAULT_EMBED_DESC)
+        self.embed_image_url = info_dict.get('embed_image_url', None)
         self.embed_footer = info_dict.get('embed_footer', None)
-        self.embed_thumbnail = info_dict.get('embed_thumbnail', None)
+        self.embed_thumbnail_url = info_dict.get('embed_thumbnail_url', None)
         self.embed_author_name = info_dict.get('embed_author_name', None)
-        self.embed_author_avatar = info_dict.get('embed_author_avatar', None)
-        self.embed_color = info_dict.get('embed_color', None)
+        self.embed_author_avatar_url = info_dict.get('embed_author_avatar_url', None)
+        self.embed_color = info_dict.get('embed_color', EMBED_COLOUR_PTN_DEFAULT)
+
 
     def to_dictionary(self):
         """
@@ -34,6 +37,19 @@ class EmbedData:
                 response[key] = value
         return response
 
+
+    def set_attribute(self, attribute_name, value):
+        """
+        Populates attribute_name with value.
+        """
+        # Check if the attribute name exists
+        if hasattr(self, attribute_name):
+            # Use setattr to set the attribute dynamically
+            setattr(self, attribute_name, value)
+        else:
+            print(f"⚠ Attribute '{attribute_name}' does not exist in EmbedData")
+
+
     def __str__(self):
         """
         Overloads str to return a readable object
@@ -41,9 +57,10 @@ class EmbedData:
         :rtype: str
         """
         return 'EmbedData: embed_title:{0.embed_title} | embed_description:{0.embed_description} | ' \
-               'embed_image:{0.embed_image} embed_footer:{0.embed_footer} | embed_thumbnail:{0.embed_thumbnail} | ' \
-               'embed_author_name:{0.embed_author_name} | embed_author_avatar:{0.embed_author_avatar} | ' \
+               'embed_image:{0.embed_image_url} embed_footer:{0.embed_footer} | embed_thumbnail:{0.embed_thumbnail_url} | ' \
+               'embed_author_name:{0.embed_author_name} | embed_author_avatar:{0.embed_author_avatar_url} | ' \
                'embed_color:{0.embed_color}'.format(self)
+
 
     def __bool__(self):
         """

@@ -25,7 +25,7 @@ from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENS
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error
+from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error, CommandPermissionError
 
 
 """
@@ -76,6 +76,20 @@ def check_roles(permitted_role_ids):
         return permission
     return app_commands.check(checkroles)
 
+
+def check_channel_permissions(): # does this work? I have no idea. Discord seems to disable interactions in channels you don't have send permissions in, even if explicitly enabled. 🤷‍♀️
+    async def checkuserperms(interaction: discord.Interaction):
+        member: discord.Member = interaction.guild.get_member(interaction.user.id)
+        user_permissions: discord.Permissions = interaction.channel.permissions_for(member)
+        permission = user_permissions.send_messages
+        if not permission:
+            try:
+                raise CommandPermissionError()
+            except CommandPermissionError as e:
+                print(e)
+                raise
+        return permission
+    return app_commands.check(checkuserperms)
 
 """
 Helpers
