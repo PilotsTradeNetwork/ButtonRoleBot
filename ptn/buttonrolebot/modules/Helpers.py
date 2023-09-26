@@ -19,7 +19,7 @@ from discord.ui import View
 from ptn.buttonrolebot.bot import bot, DynamicButton
 
 # import constants
-from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS
+from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS, EMBED_COLOUR_OK
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
@@ -137,7 +137,7 @@ async def check_role_exists(interaction, role_id):
     
 # add role button to message
 # this one is kind of a big deal
-def _add_role_button_to_view(interaction, button_data: RoleButtonData):
+async def _add_role_button_to_view(interaction: discord.Interaction, button_data: RoleButtonData):
     print("Called _add_role_button_to_view")
     print(button_data)
     message: discord.Message = button_data.message
@@ -163,5 +163,13 @@ def _add_role_button_to_view(interaction, button_data: RoleButtonData):
 
     print("Adding dynamic button component")
     view.add_item(button)
+
+    print("Logging to bot-spam")
+    embed = discord.Embed(
+        description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to toggle the <@&{button_data.role_id}> role.",
+        color=EMBED_COLOUR_OK
+    )
+
+    await spamchannel.send(embed=embed)
 
     return view

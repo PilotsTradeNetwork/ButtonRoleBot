@@ -51,7 +51,7 @@ class ConfirmRemoveButtonsView(View):
         print(f"User confirmed button removal from {self.message}")
         try:
             print("Removing the view")
-            # await self.message.edit(view=None)
+            await self.message.edit(view=None)
 
             print("Notifying bot-spam")
             spamchannel = bot.get_channel(channel_botspam())
