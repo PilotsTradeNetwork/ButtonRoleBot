@@ -309,7 +309,7 @@ class EmbedGenButtons(View):
 
             print("Notifying bot-spam...")
             embed = discord.Embed(
-                description=f"📄 <@{interaction.user.id}> sent or edited the bot Embed at <#{interaction.message.jump_url}>",
+                description=f"📄 <@{interaction.user.id}> sent or edited the bot Embed at {interaction.message.jump_url}",
                 color=constants.EMBED_COLOUR_OK
             )
             await self.spamchannel.send(embed=embed)
