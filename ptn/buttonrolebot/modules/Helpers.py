@@ -6,6 +6,7 @@ Depends on: ErrorHandler, Constants
 """
 # import os
 import os
+from urllib.parse import urlparse
 
 #import validators
 import validators
@@ -103,7 +104,8 @@ async def get_guild():
 
 
 def is_valid_extension(url):
-    _, ext = os.path.splitext(url)
+    parsed_url = urlparse(url)
+    _, ext = os.path.splitext(parsed_url.path)  # Only consider the path of the URL
     return ext.lower() in VALID_EXTENSIONS and validators.url(url)
 
 

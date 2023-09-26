@@ -169,7 +169,7 @@ class NextButton(Button):
 
             # check if we have permission to manage this role
             bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-            if bot_member.top_role < role:
+            if bot_member.top_role <= role:
                 print("We don't have permission for this role")
                 try:
                     raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
@@ -515,7 +515,7 @@ class EnterRoleIDModal(Modal):
 
         # check if we have permission to manage this role
         bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-        if bot_member.top_role < role:
+        if bot_member.top_role <= role:
             print("We don't have permission for this role")
             try:
                 raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
