@@ -79,8 +79,8 @@ def check_roles(permitted_role_ids):
 
 def check_channel_permissions(): # does this work? I have no idea. Discord seems to disable interactions in channels you don't have send permissions in, even if explicitly enabled. 🤷‍♀️
     async def checkuserperms(interaction: discord.Interaction):
-        member: discord.Member = await interaction.guild.get_member(interaction.user.id)
-        user_permissions: discord.Permissions = await interaction.channel.permissions_for(member)
+        member: discord.Member = interaction.guild.get_member(interaction.user.id)
+        user_permissions: discord.Permissions = interaction.channel.permissions_for(member)
         permission = user_permissions.send_messages
         if not permission:
             try:
