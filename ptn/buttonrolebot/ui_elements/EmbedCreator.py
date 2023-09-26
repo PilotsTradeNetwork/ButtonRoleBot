@@ -169,6 +169,11 @@ class EmbedGenButtons(View):
     async def set_embed_color_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_color_button click")
 
+        if self.embed_data.embed_color.startswith("#"):
+            print("Found color saved in format #xxxxxx, converting...")
+            # convert it to a hex int
+            self.embed_data.embed_color = self.embed_data.embed_color.lstrip("#")
+
         hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
         print(f'Hex color: {hex_color}')
 
