@@ -169,13 +169,19 @@ class EmbedGenButtons(View):
     async def set_embed_color_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_color_button click")
 
-        if self.embed_data.embed_color.startswith("#"):
-            print("Found color saved in format #xxxxxx, converting...")
-            # convert it to a hex int
-            self.embed_data.embed_color = self.embed_data.embed_color.lstrip("#")
-
-        hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
-        print(f'Hex color: {hex_color}')
+        try:
+            if callable(getattr(self.embed_data.embed_color, 'to_rgb', None)):
+                # we got a Discord color object
+                print("Discord color object returned, converting to int...")
+                red, green, blue = self.embed_data.embed_color.to_rgb()
+                hex_color = "0x{:06X}".format(int(red * 255), int(green * 255), int(blue * 255))
+                print(hex_color)
+            else:
+                print("Converting existing color to hex in format 0x000000")
+                hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
+                print(f'Hex color: {hex_color}') 
+        except Exception as e:
+            print(e)
 
         # set our modal field info
         field_info = {
