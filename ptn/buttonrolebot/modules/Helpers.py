@@ -4,11 +4,8 @@ A module for helper functions called by other modules.
 Depends on: ErrorHandler, Constants
 
 """
-# import os
 import os
-
-#import validators
-import validators
+from urllib.parse import urlparse
 
 # import discord.py
 import discord
@@ -103,8 +100,9 @@ async def get_guild():
 
 
 def is_valid_extension(url):
-    _, ext = os.path.splitext(url)
-    return ext.lower() in VALID_EXTENSIONS and validators.url(url)
+    parsed_url = urlparse(url)
+    _, ext = os.path.splitext(parsed_url.path)  # Only consider the path of the URL
+    return ext.lower() in VALID_EXTENSIONS
 
 
 # remove a field from an embed
