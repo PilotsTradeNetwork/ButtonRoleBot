@@ -308,6 +308,13 @@ class EmbedGenButtons(View):
             print("Updating interaction response...")
             await interaction.response.edit_message(embed=embed, view=None)
 
+            print("Notifying bot-spam...")
+            embed = discord.Embed(
+                description=f"📄 <@{interaction.user.id}> sent or edited the bot Embed at <#{interaction.message.jump_url}>",
+                color=constants.EMBED_COLOUR_OK
+            )
+            await spamchannel.send(embed=embed)
+
         except Exception as e:
             print(e)
             try:
