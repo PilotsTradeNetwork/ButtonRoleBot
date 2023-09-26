@@ -412,7 +412,7 @@ class ConfirmConfigView(View):
         print("Received ✅ final_submit_button click")
         try:
             # create the button!
-            view = _add_role_button_to_view(interaction, self.button_data)
+            view = await _add_role_button_to_view(interaction, self.button_data)
 
             # edit it into the target message
             await self.message.edit(view=view)
