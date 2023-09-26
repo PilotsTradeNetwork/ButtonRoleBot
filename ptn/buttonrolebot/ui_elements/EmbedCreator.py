@@ -29,8 +29,6 @@ from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension
 
-spamchannel = bot.get_channel(channel_botspam())
-
 """
 EMBED CREATOR
 
@@ -68,6 +66,7 @@ class EmbedGenButtons(View):
     def __init__(self, instruction_embed, embed_data, message, action):
         self.action = action
         self.message: discord.Message = message
+        self.spamchannel: discord.TextChannel = bot.get_channel(channel_botspam())
         super().__init__(timeout=None)
         self.instruction_embed: discord.Embed = instruction_embed # our original embed
         self.embed_data: EmbedData = embed_data # an instance of EmbedData to send to our embed creators
@@ -276,7 +275,7 @@ class EmbedGenButtons(View):
             try:
                 raise CustomError(error)
             except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)       
+                await on_generic_error(self.spamchannel, interaction, e)       
 
         try:
             print("Calling function to generate Embed...")
@@ -313,14 +312,14 @@ class EmbedGenButtons(View):
                 description=f"📄 <@{interaction.user.id}> sent or edited the bot Embed at <#{interaction.message.jump_url}>",
                 color=constants.EMBED_COLOUR_OK
             )
-            await spamchannel.send(embed=embed)
+            await self.spamchannel.send(embed=embed)
 
         except Exception as e:
             print(e)
             try:
                 raise GenericError(e)
             except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
+                await on_generic_error(self.spamchannel, interaction, e)
 
 
 # modal for embed parameters
@@ -328,6 +327,7 @@ class EmbedContentModal(Modal):
     def __init__(self, instruction_embed, field_data: FieldData, embed_data, button, view, timeout = None) -> None:
         super().__init__(title=field_data.title, timeout=timeout)
         print('Defining variables')
+        self.spamchannel: discord.TextChannel = bot.get_channel(channel_botspam())
         self.instruction_embed: discord.Embed = instruction_embed
         self.embed_data: EmbedData = embed_data
         self.view: View = view
@@ -366,14 +366,14 @@ class EmbedContentModal(Modal):
                         try:
                             raise GenericError(e)
                         except Exception as e:
-                            await on_generic_error(spamchannel, interaction, e)
+                            await on_generic_error(self.spamchannel, interaction, e)
                         pass
                 else:
                     error = f"'{self.embed_field.value}' is not a valid hex color code."
                     try:
                         raise CustomError(error)
                     except Exception as e:
-                        await on_generic_error(spamchannel, interaction, e)
+                        await on_generic_error(self.spamchannel, interaction, e)
                     return
             else:
                 print("No user color entry, re-assigning default.")
@@ -392,7 +392,7 @@ class EmbedContentModal(Modal):
                     try:
                         raise CustomError(error)
                     except Exception as e:
-                        await on_generic_error(spamchannel, interaction, e)
+                        await on_generic_error(self.spamchannel, interaction, e)
                     return
 
             print('Updating embed_data')
@@ -424,6 +424,6 @@ class EmbedContentModal(Modal):
         try:
             raise GenericError(error)
         except Exception as e:
-            await on_generic_error(spamchannel, interaction, e)
+            await on_generic_error(self.spamchannel, interaction, e)
         return
 
