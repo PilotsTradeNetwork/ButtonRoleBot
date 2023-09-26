@@ -170,6 +170,7 @@ async def _add_role_button_to_view(interaction: discord.Interaction, button_data
         color=EMBED_COLOUR_OK
     )
 
+    spamchannel = bot.get_channel(channel_botspam())
     await spamchannel.send(embed=embed)
 
     return view
