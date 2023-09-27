@@ -172,14 +172,15 @@ class EmbedGenButtons(View):
         try:
             if callable(getattr(self.embed_data.embed_color, 'to_rgb', None)):
                 # we got a Discord color object
-                print("Discord color object returned, converting to int...")
+                print(f"⏳ Discord color object {self.embed_data.embed_color} returned, converting to int...")
                 red, green, blue = self.embed_data.embed_color.to_rgb()
-                hex_color = "0x{:06X}".format(int(red * 255), int(green * 255), int(blue * 255))
-                print(hex_color)
+                print(f'🎨 RGB values: {red} {green} {blue}')
+                hex_color = "0x{:02x}{:02x}{:02x}".format(red, green, blue)
+                print(f'▶ Hex code: {hex_color}')
             else:
-                print("Converting existing color to hex in format 0x000000")
+                print("⏳ Converting existing color to hex in format 0x000000...")
                 hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
-                print(f'Hex color: {hex_color}') 
+                print(f'▶ Hex color: {hex_color}') 
         except Exception as e:
             print(e)
 
@@ -364,12 +365,17 @@ class EmbedContentModal(Modal):
             print('Received COLOR input')
         # turn color input into an INT and store it
             if self.embed_field.value:
-                print(f"User entered color as {self.embed_field.value}, we'll check it's valid and convert it to int")
-                if re.match(constants.HEX_COLOR_PATTERN, self.embed_field.value):
+                color_input = self.embed_field.value
+                print(f"User entered color as {color_input}, we'll check it's valid and convert it to int")
+                if re.match(constants.HEX_COLOR_PATTERN, color_input):
                     print('Received valid hex match')
+                    if color_input.startswith('#'): # check if we have an HTML color code
+                        print(f"Received web color code with #: {color_input}, stripping leading #...")
+                        color_input = color_input.lstrip('#')
+                        print(f"New value: {color_input}")
                     try:
-                        color_int = int(self.embed_field.value, 16)  # Convert hex string to integer
-                        print(f'Converted {self.embed_field.value} to {color_int}')
+                        color_int = int(color_input, 16)  # Convert hex string to integer
+                        print(f'Converted {color_input} to {color_int}')
                         self.embed_data.embed_color = color_int
                         print(self.embed_data.embed_color)
                     except ValueError as e:

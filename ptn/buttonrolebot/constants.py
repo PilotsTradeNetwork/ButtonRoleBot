@@ -66,7 +66,7 @@ EMBED_COLOUR_PTN_DEFAULT = 42971     # used by various embeds throughout the ser
 EMOJI_DONE = '🟢'
 EMOJI_NOT_DONE = '⭕'
 
-HEX_COLOR_PATTERN = r'^0x[0-9A-Fa-f]{6}$'
+HEX_COLOR_PATTERN = r'^(0x[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{6})$'
 
 VALID_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 
@@ -100,6 +100,7 @@ AMAZING_GIFS = [
     "https://media.tenor.com/VGuFz5LmvdcAAAAC/absolute-win-i-see-this-as-an-absolute-win.gif", # absolute win (no but srsly)
     "https://media.tenor.com/V9V2OMYWmMIAAAAC/oh-you-aint-seen-nothing-yet-branch.gif", # trolls ain't seen nuthin
     "https://media.tenor.com/K_YUkFYeDqUAAAAC/thor-marvel.gif", # that's what heroes do
+    "https://media.tenor.com/AOdnEQ_vrIwAAAAC/yeah-yes.gif", # kirk and bones nodding to each other emphatically
     "https://media.tenor.com/ZCVrHrXgaoUAAAAC/treat-yo-self-treat-yourself.gif" # treat yo self
 ]
 

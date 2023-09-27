@@ -99,70 +99,68 @@ def button_config_embed(index, button_data: RoleButtonData):
 
     if index == 0:
         print("Returning embed for index 0")
-        # embed.title="Add Role Button to Message"
+        embed.title="ADD ROLE BUTTON TO MESSAGE"
         embed.description = \
-            '# Add Role Button to Message\n' \
-            f'Let\'s :rocket: **add a role button** to {message.jump_url}\n\n' \
-            'First, enter the 🎢 **role ID** of the role you wish the button to add/remove. ' \
-            'You can find a role ID using Discord\'s developer mode, by right-clicking on a role ' \
-            'in a user\'s role list, or in the server\'s roles menu.'
+            f'This will add a button to {message.jump_url} that can be used by anyone pressing it to toggle a selected role.\n\n' \
+            ':one: :rocket: **First enter the ROLE ID of the role you wish the button to add/remove**.\n\n' \
+            '*You can find a role ID using `Discord\'s developer mode` by right-clicking on a role ' \
+            'in a user\'s role list or in the server\'s roles menu. Or, you can `mention the role ' \
+            'in a message` and put a backslash `\\` in front of it before sending to get its ID: Put the mention in ' \
+            'an edit so it doesn\'t ping, and remove the `<@&>` to get the numeric ID.*'
 
         return embed
 
     elif index == 1:
         print("Returning embed for index 1")
-        # embed.title="Confirm Button Role"
+        # embed.title="CONFIRM BUTTON ROLE"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
         embed.description = \
-            '# Confirm Button Role\n' \
-            f'Please ✅ **confirm** you want to use your button to add the following role:\n' \
-            f'## <@&{button_data.role_id}>'
+            f':two: ✅ **CONFIRM you want to use your button to add the following role**:\n' \
+            f'# <@&{button_data.role_id}>'
 
         return embed
 
     elif index == 2:
         print("Returning embed for index 2")
-        # embed.title="Button Style"
+        # embed.title="BUTTON STYLE"
         embed.description = \
-            '# Button Style\n' \
-            f'Now choose which 🎨 **style of button** you want to add.'
+            f':three: :art: **CHOOSE which STYLE OF BUTTON you want to add**.'
 
         return embed
     
     elif index == 3:
         print("Returning embed for index 3")
-        # embed.title="Button Label & Emoji"
+        # embed.title="LABEL & EMOJI"
         embed.description = \
-            '# Button Label & Emoji\n' \
-            f'Now choose your button\'s 🏷 **label** and 🤪 **emoji**.\n\n' \
-            '- Buttons can have both a label and an emoji, but need *at least one or the other* to be valid.\n' \
-            '- Custom emojis should be in the format: `<:name:id>`\n' \
+            f':four: :label: **Choose your button\'s LABEL and/or EMOJI**.\n\n' \
+            '- Buttons can have both a label and an emoji, but need at least one or the other to be valid.\n' \
+            '- Custom emojis should be in the format: `<:name:id>` You can get a custom emoji code by entering ' \
+            'the emoji in a message, and putting a backslash `\` in front of it before sending.\n' \
             '- Default emojis can be entered using an emoji keyboard (Windows: `Win`+`.`) '\
-            'or copy/pasting from a sent Discord message.`'
+            'or copy/pasting from a sent Discord message.'
 
         return embed
 
     elif index == 4:
         print("Returning embed for index 4")
         print(button_data)
-        # embed.title="Confirm Button Details"
+        # embed.title="CONFIRM DETAILS"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
 
         embed.description = \
-            '# Confirm Button Details\n' \
-            'Congratulations! You win a button! Here is your prize. Please indicate if you wish to accept it:' 
+            ':five: :trophy: Congratulations! You win a button! Here is your prize. **Please indicate if you wish to accept it**:' 
 
         return embed
 
     elif index == 5:
         print("Returning embed for index 5")
-        # embed.title="Confirm Button Details"
+        # embed.title="BUTTON COMPLETE"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
 
         gif = random.choice(HOORAY_GIFS)
 
         embed.description = \
-            '# Button Created!'
+            ':six: :partying_face: **Button Created**!'
         
         embed.set_image(url=gif)
 
