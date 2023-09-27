@@ -86,6 +86,8 @@ async def on_generic_error(
         elif "custom id" in str(error): # duplicate custom id
             print("Error caused by duplicate custom id")
             message = 'This message already appears to have a button associated with that role.'
+        else: # dunno lol
+            message = error
 
         embed = discord.Embed(
             description=f"❌ {message}",
