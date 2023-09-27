@@ -145,7 +145,7 @@ async def _add_role_button_to_view(interaction: discord.Interaction, button_data
     # role: discord.Role = button_data.role_object
 
     print("Instantiating DynamicButton component")
-    button = DynamicButton(button_data.role_id, message.id)
+    button = DynamicButton(button_data.button_action, button_data.role_id, message.id)
 
     print("Setting button properties")
     button.item.label = button_data.button_label if button_data.button_label else None
@@ -166,7 +166,7 @@ async def _add_role_button_to_view(interaction: discord.Interaction, button_data
 
     print("Logging to bot-spam")
     embed = discord.Embed(
-        description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to toggle the <@&{button_data.role_id}> role.",
+        description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to {button_data.button_action} the <@&{button_data.role_id}> role.",
         color=EMBED_COLOUR_OK
     )
 
