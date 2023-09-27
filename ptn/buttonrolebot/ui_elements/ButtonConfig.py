@@ -4,6 +4,7 @@ A set of discord.ui elements for customising buttons added by BRB.
 """
 # import discord
 import discord
+from discord import HTTPException
 from discord.interactions import Interaction
 from discord.ui import View, Modal, Button
 
@@ -18,7 +19,7 @@ import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
+from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
 from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_button_to_view
 
@@ -425,6 +426,12 @@ class ConfirmConfigView(View):
             embed = button_config_embed(final_index, self.button_data)
             view = StressButtonView()
             await interaction.response.edit_message(embed=embed, view=view)
+        except HTTPException as e:
+            try:
+                raise BadRequestError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
         except Exception as e:
             try:
                 raise GenericError(e)
