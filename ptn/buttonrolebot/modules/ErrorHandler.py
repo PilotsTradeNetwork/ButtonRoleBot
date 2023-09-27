@@ -23,7 +23,6 @@ class CommandChannelError(app_commands.CheckFailure): # channel check error
         super().__init__(permitted_channel, formatted_channel_list, "Channel check error raised")
     pass
 
-
 class CommandRoleError(app_commands.CheckFailure): # role check error
     def __init__(self, permitted_roles, formatted_role_list):
         self.permitted_roles = permitted_roles
@@ -35,6 +34,11 @@ class CommandPermissionError(app_commands.CheckFailure): # channel send permissi
     pass
 
 class GenericError(Exception): # generic error
+    pass
+
+class BadRequestError(Exception): # 400 Bad Request from HTTPException
+    def __init__(self, exception):
+        print("Received BadRequestError def init")
     pass
 
 class CustomError(Exception): # an error handler that hides the Exception text from the user, but shows custom text sent from the source instead
@@ -70,6 +74,29 @@ async def on_generic_error(
             await spamchannel.send(embed=spam_embed)
         except Exception as e:
             print(e)
+
+    if isinstance(error, BadRequestError): # 400 Bad Request from HTTPException
+        print(f"Received HTTPException: {error}")
+
+        if "emoji" in str(error): # emoji is invalid
+            print("Error caused by invalid emoji")
+            message = '**Emoji Error**\n\nSorry, the emoji you chose is not recognised by Discord as a valid emoji.\n\n' \
+                      'Some emojis are based on complex ZWJ sequences and may not be fully supported by all platforms.\n\n' \
+                      'You can try picking your desired emoji from Discord\'s (non-custom) emoji selector, sending it in a message, and copying the result.'
+        elif "custom id" in str(error): # duplicate custom id
+            print("Error caused by duplicate custom id")
+            message = 'This message already appears to have a button associated with that role.'
+        else: # dunno lol
+            message = error
+
+        embed = discord.Embed(
+            description=f"❌ {message}",
+            color=constants.EMBED_COLOUR_ERROR
+        )
+        try:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except:
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     if isinstance(error, GenericError): # Our bog-standard "hey, an error!" response. Just displays the raw error text to the user without explanation
         print(f"Generic error raised: {error}")

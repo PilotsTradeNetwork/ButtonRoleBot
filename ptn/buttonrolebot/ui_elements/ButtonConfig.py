@@ -2,8 +2,12 @@
 A set of discord.ui elements for customising buttons added by BRB.
 
 """
+# import libraries
+import emoji
+
 # import discord
 import discord
+from discord import HTTPException
 from discord.interactions import Interaction
 from discord.ui import View, Modal, Button
 
@@ -18,7 +22,7 @@ import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
+from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
 from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_button_to_view
 
@@ -425,6 +429,12 @@ class ConfirmConfigView(View):
             embed = button_config_embed(final_index, self.button_data)
             view = StressButtonView()
             await interaction.response.edit_message(embed=embed, view=view)
+        except HTTPException as e:
+            try:
+                raise BadRequestError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
         except Exception as e:
             try:
                 raise GenericError(e)
@@ -478,6 +488,8 @@ class EnterRoleIDModal(Modal):
     def __init__(self, button_data: RoleButtonData, title = 'Set Role', timeout = None):
         self.button_data = button_data
         self.index = 0
+        if self.button_data.role_id:
+            self.role_id.default = self.button_data.role_id
         super().__init__(title=title, timeout=timeout)
 
     role_id = discord.ui.TextInput(
@@ -500,7 +512,7 @@ class EnterRoleIDModal(Modal):
             return
         
         # check int corresponds to a role on this server
-        role = None
+        role: discord.Role = None
         print(f'Role is {role}')
         role = await check_role_exists(interaction, self.button_data.role_id)
 
@@ -515,7 +527,7 @@ class EnterRoleIDModal(Modal):
 
         # check if we have permission to manage this role
         bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-        if bot_member.top_role <= role:
+        if bot_member.top_role <= role or role.managed:
             print("We don't have permission for this role")
             try:
                 raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
@@ -534,6 +546,10 @@ class EnterLabelEmojiModal(Modal):
     def __init__(self, button_data: RoleButtonData, title = 'Set Label & Emoji', timeout = None):
         self.button_data = button_data
         self.index = 3
+        if self.button_data.button_label:
+            self.button_label.default = self.button_data.button_label
+        if self.button_data.button_emoji:
+            self.button_emoji.default = self.button_data.button_emoji
         super().__init__(title=title, timeout=timeout)
 
     button_label = discord.ui.TextInput(
@@ -569,7 +585,34 @@ class EnterLabelEmojiModal(Modal):
             print("🔴 Received empty string for Emoji")
             self.button_data.button_emoji = None
         else:
-            self.button_data.button_emoji = str(self.button_emoji)
+            # check if user has entered Discord emoji
+            if ':' in self.button_emoji.value and not '<' in self.button_emoji.value:
+                print(f"⏳ User seems to have entered Discord emoji as {self.button_emoji.value}, attempting to resolve against library...")
+                unicode_emoji = emoji.emojize(self.button_emoji.value)
+                print(f"Updated emoji: {unicode_emoji}")
+                self.button_data.button_emoji = str(unicode_emoji)
+            else:
+                self.button_data.button_emoji = str(self.button_emoji.value)
+
+            if ':' in self.button_data.button_emoji and not '<' in self.button_data.button_emoji: # triggered if we failed to convert a : to an emoji and its not custom
+                print("Found Discord non-custom code in emoji value")
+                try:
+                    error = f'**Could not resolve the emoji you entered against its unicode name**.\n' \
+                            'Not all Discord emojis have the same shortcode as the unicode name, for example `:heart:` in Discord is `:red_heart:` in unicode.\n' \
+                            'You can try sending the emoji you want in a message, then copying the emoji from that message.'
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+            
+            elif emoji.emoji_count(self.button_data.button_emoji) > 1: # should trigger if we have a ZWJ emoji or too many emojis
+                print("number of emojis in input is not 1")
+                try:
+                    error = f'The emoji you entered does not seem to be valid: {self.button_data.button_emoji}\n' \
+                             'It may be a non-standard or unicode-unsupported emoji. ' \
+                             'You can try sending the emoji you want in a message, then copying the emoji from that message.'
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
 
         print(f'Button emoji set: {self.button_data.button_emoji}')
 
