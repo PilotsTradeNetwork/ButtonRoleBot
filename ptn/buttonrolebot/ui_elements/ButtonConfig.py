@@ -468,7 +468,7 @@ class LabelEmojiView(View):
         row=1
     )
     async def label_emoji_button(self, interaction: discord.Interaction, button):
-        print("Received label_emoji_button click")
+        print("🔘 Received label_emoji_button click")
 
         await interaction.response.send_modal(EnterLabelEmojiModal(self.button_data))
 
@@ -628,20 +628,25 @@ class EnterLabelEmojiModal(Modal):
         self.button_data = button_data
         self.index = 4
         if self.button_data.button_label:
-            self.button_label.default = self.button_data.button_label
+            print(f'Default set to {self.button_data.button_label}')
+            self.button_label.default = str(self.button_data.button_label)
         if self.button_data.button_emoji:
-            self.button_emoji.default = self.button_data.button_emoji
+            print(f'Default set to {self.button_data.button_emoji}')
+            self.button_emoji.default = str(self.button_data.button_emoji)
+        # TODO: above caused some weirdness after latest update until specifying strings
         super().__init__(title=title, timeout=timeout)
 
     button_label = discord.ui.TextInput(
         label='Label',
         placeholder='The text that will appear on your button.',
+        style=discord.TextStyle.short,
         required=False,
         max_length=80
     )
     button_emoji = discord.ui.TextInput(
         label='Emoji',
         placeholder='The emoji that will appear on your button.',
+        style=discord.TextStyle.short,
         required=False,
         max_length=60
     )
