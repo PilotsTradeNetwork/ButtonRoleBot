@@ -64,8 +64,8 @@ def button_config_embed(index, button_data: RoleButtonData):
     print("called button_config_embed")
     message: discord.Message = button_data.message
 
-    if index <= 4:
-        footer = f"Step {index + 1} of 5"
+    if index < 6:
+        footer = f"Step {index + 1} of 6"
     else:
         footer = "All done!"
 
@@ -74,7 +74,7 @@ def button_config_embed(index, button_data: RoleButtonData):
     embed.set_thumbnail(url=BUTTON_CHOOSE_THUMBNAIL)
     embed.set_footer(text=footer)
 
-    if index >= 4:
+    if index >= 5:
         # add summary fields
         if button_data.button_label is not None:
             label = button_data.button_label
@@ -91,6 +91,9 @@ def button_config_embed(index, button_data: RoleButtonData):
         style = button_data.get_button_style_name()
         embed.add_field(name="Style", value=style)
 
+        action: str = button_data.button_action
+        embed.add_field(name="Action", value=action.title())
+
         role_id = button_data.role_id
         embed.add_field(name="Target Role", value=f'<@&{role_id}>\n`{role_id}`')
 
@@ -101,7 +104,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         print("Returning embed for index 0")
         embed.title="ADD ROLE BUTTON TO MESSAGE"
         embed.description = \
-            f'This will add a button to {message.jump_url} that can be used by anyone pressing it to toggle a selected role.\n\n' \
+            f'This will add a button to {message.jump_url} that can be used by anyone pressing it to manage a selected role.\n\n' \
             ':one: :rocket: **First enter the ROLE ID of the role you wish the button to add/remove**.\n\n' \
             '*You can find a role ID using `Discord\'s developer mode` by right-clicking on a role ' \
             'in a user\'s role list or in the server\'s roles menu. Or, you can `mention the role ' \
@@ -115,7 +118,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         # embed.title="CONFIRM BUTTON ROLE"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
         embed.description = \
-            f':two: ✅ **CONFIRM you want to use your button to add the following role**:\n' \
+            f':two: ✅ **CONFIRM you want to use your button to manage the following role**:\n' \
             f'# <@&{button_data.role_id}>'
 
         return embed
@@ -124,15 +127,23 @@ def button_config_embed(index, button_data: RoleButtonData):
         print("Returning embed for index 2")
         # embed.title="BUTTON STYLE"
         embed.description = \
-            f':three: :art: **CHOOSE which STYLE OF BUTTON you want to add**.'
+            f':three: 🛠 **CHOOSE what you want your button to DO**:'
+
+        return embed
+
+    elif index == 3:
+        print("Returning embed for index 3")
+        # embed.title="BUTTON STYLE"
+        embed.description = \
+            f':four: :art: **CHOOSE which STYLE OF BUTTON you want to add**.'
 
         return embed
     
-    elif index == 3:
-        print("Returning embed for index 3")
+    elif index == 4:
+        print("Returning embed for index 4")
         # embed.title="LABEL & EMOJI"
         embed.description = \
-            f':four: :label: **Choose your button\'s LABEL and/or EMOJI**.\n\n' \
+            f':five: :label: **Choose your button\'s LABEL and/or EMOJI**.\n\n' \
             '- Buttons can have both a label and an emoji, but need at least one or the other to be valid.\n' \
             '- Custom emojis should be in the format: `<:name:id>` You can get a custom emoji code by entering ' \
             'the emoji in a message, and putting a backslash `\` in front of it before sending.\n' \
@@ -141,26 +152,26 @@ def button_config_embed(index, button_data: RoleButtonData):
 
         return embed
 
-    elif index == 4:
-        print("Returning embed for index 4")
+    elif index == 5:
+        print("Returning embed for index 5")
         print(button_data)
         # embed.title="CONFIRM DETAILS"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
 
         embed.description = \
-            ':five: :trophy: Congratulations! You win a button! Here is your prize. **Please indicate if you wish to accept it**:' 
+            ':six: :trophy: Congratulations! You win a button! Here is your prize. **Please indicate if you wish to accept it**:' 
 
         return embed
 
-    elif index == 5:
-        print("Returning embed for index 5")
+    elif index == 6:
+        print("Returning embed for index 6")
         # embed.title="BUTTON COMPLETE"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
 
         gif = random.choice(HOORAY_GIFS)
 
         embed.description = \
-            ':six: :partying_face: **Button Created**!'
+            ':partying_face: **Button Created**!'
         
         embed.set_image(url=gif)
 
