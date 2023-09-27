@@ -32,16 +32,17 @@ I mean I could write a separate error handler for this, or I could NOT
 
 i'm so sorry kutu
 """
-class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'button:role:(?P<role_id>[0-9]+):message:(?P<message_id>[0-9]+)'):
-    def __init__(self, role_id: int, message_id: int) -> None:
+class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'button:role:(?P<role_id>[0-9]+):message:(?P<message_id>[0-9]+):action:(?P<action>[a-z]+)'):
+    def __init__(self, action: str, role_id: int, message_id: int) -> None:
         print("DynamicButton init")
         super().__init__(
             discord.ui.Button(
                 label='Assign Role',
                 style=discord.ButtonStyle.blurple,
-                custom_id=f'button:role:{role_id}:message:{message_id}'
+                custom_id=f'button:role:{role_id}:message:{message_id}:action:{action}'
             )
         )
+        self.action: str = action
         self.role_id: int = role_id
         self.message_id: int = message_id
 
@@ -50,13 +51,14 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
     @classmethod
     async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /):
         print("DynamicButton: from_custom_id called")
+        action = str(match['action']) if match else 'toggle'
         role_id = int(match['role_id'])
         message_id = int(match['message_id'])
-        return cls(role_id, message_id)
+        return cls(action, role_id, message_id)
 
     async def callback(self, interaction: discord.Interaction) -> None:
         print("DynamicButton: callback from:")
-        print(f'button:message:{self.message_id}:role:{self.role_id}')
+        print(f'action:{self.action}:message:{self.message_id}:role:{self.role_id}')
 
         print(f"Spamchannel is {spamchannel}")
 
@@ -66,20 +68,31 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
 
             # check if user has it
             print(f'Check whether user has role: "{role}"')
-            if role not in interaction.user.roles:
+            
+            if role not in interaction.user.roles and self.action != 'take':
+                print('User doesn\'t have role and action is not take')
                 # rolercoaster giveth
                 await interaction.user.add_roles(role)
                 print(f'➕ Gave {interaction.user} the {role} role')
-                action = "now"
+                adverb = "now"
 
-            else:
+            elif role in interaction.user.roles and self.action != 'give':
+                print('User has role and action is not give')
                 # ...and rolercoaster taketh away
                 await interaction.user.remove_roles(role)
                 print(f'➖ Removed {interaction.user} from the {role} role')
-                action = "no longer"
+                adverb = "no longer"
+
+            elif role not in interaction.user.roles and self.action == 'take':
+                print('No action required: user hasn\'t got role and action is take')
+                adverb = 'don\'t'
+
+            elif role in interaction.user.roles and self.action == 'give':
+                print('No action required: user already has role and action is give')
+                adverb = 'already'
 
             embed = discord.Embed(
-                description=f'You {action} have the <@&{role.id}> role.',
+                description=f'You {adverb} have the <@&{role.id}> role.',
                 color=EMBED_COLOUR_OK
             )
 

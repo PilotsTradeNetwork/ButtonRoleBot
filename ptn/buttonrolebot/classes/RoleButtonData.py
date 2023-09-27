@@ -21,6 +21,7 @@ class RoleButtonData:
         self.button_label = info_dict.get('button_label', None)
         self.button_emoji = info_dict.get('button_emoji', None)
         self.button_style = info_dict.get('button_style', None)
+        self.button_action = info_dict.get('button_action', 'toggle')
 
     def to_dictionary(self):
         """
@@ -59,9 +60,9 @@ class RoleButtonData:
 
         :rtype: str
         """
-        return 'RoleButtonData: message:{0.message} role_id:{0.role_id} ' \
-               'button_label:{0.button_label} button_emoji:{0.button_emoji} ' \
-               'button_style:{0.button_style}'.format(self)
+        return 'RoleButtonData: message:{0.message} | role_id:{0.role_id} | ' \
+               'button_label:{0.button_label} | button_emoji:{0.button_emoji} | ' \
+               'button_style:{0.button_style} | button_action:{0.button_action}'.format(self)
 
     def __bool__(self):
         """
