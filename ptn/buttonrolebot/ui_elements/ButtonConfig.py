@@ -57,13 +57,16 @@ def _select_view_from_index(index, button_data: RoleButtonData):
         print("Assigning 1: ConfirmRoleView")
         view = ConfirmRoleView(button_data)
     elif index == 2:
-        print("Assigning 2: ButtonStyleView")
-        view = ButtonStyleView(button_data)
+        print("Assigning 2: ButtonActionView")
+        view = ButtonActionView(button_data)
     elif index == 3:
-        print("Assigning 3: LabelEmojiView")
-        view = LabelEmojiView(button_data)
+        print("Assigning 3: ButtonStyleView")
+        view = ButtonStyleView(button_data)
     elif index == 4:
-        print("Assigning 4: ConfirmConfigView")
+        print("Assigning 4: LabelEmojiView")
+        view = LabelEmojiView(button_data)
+    elif index == 5:
+        print("Assigning 5: ConfirmConfigView")
         view = ConfirmConfigView(button_data)
     return view
 
@@ -71,7 +74,7 @@ def _select_view_from_index(index, button_data: RoleButtonData):
 # function to increment index by one
 def _increment_index(index, button_data: RoleButtonData):
     print("Called _increment_index")
-    if index <= 4: # TODO: actual max index number here
+    if index <= 5: # TODO: actual max index number here
         index += 1
         # generate new embed
         embed = button_config_embed(index, button_data)
@@ -102,7 +105,7 @@ class CancelButton(Button):
             label="✗",
             style=discord.ButtonStyle.danger,
             custom_id="generic_cancel_button",
-            row = 2 if self.index == 2 else 1
+            row = 2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -122,7 +125,7 @@ class PrevButton(Button):
             label="◄",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_previous_button",
-            row = 2 if self.index == 2 else 1
+            row = 2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -143,7 +146,7 @@ class NextButton(Button):
             label="►",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_next_button",
-            row = 2 if self.index == 2 else 1
+            row = 2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -182,6 +185,14 @@ class NextButton(Button):
                 return
 
         elif self.index == 2:
+            if self.button_data.button_action == None:
+                try:
+                    raise CustomError("You must choo-choo-choose a button action first 🚂")
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                    return
+
+        elif self.index == 3:
             if self.button_data.button_style == None:
                 try:
                     raise CustomError("You must choo-choo-choose a button style first 🚂")
@@ -189,7 +200,7 @@ class NextButton(Button):
                     await on_generic_error(spamchannel, interaction, e)
                     return
 
-        elif self.index == 3:
+        elif self.index == 4:
             if not self.button_data.button_label and not self.button_data.button_emoji:
                 try:
                     raise CustomError(f"You must give the button *at least one* of either **label** or **emoji**.")
@@ -198,7 +209,7 @@ class NextButton(Button):
                 return
 
         # increment index by 1
-        if self.index <= 6: # TODO: actual max index number here
+        if self.index <= 7:
             embed, view = _increment_index(self.index, self.button_data)
             # update message
             await interaction.response.edit_message(embed=embed, view=view)
@@ -213,7 +224,7 @@ class ConfirmButton(Button):
             label='✔',
             style=discord.ButtonStyle.success,
             custom_id="generic_confirm_button",
-            row = 2 if self.index == 2 else 1
+            row = 2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -275,15 +286,85 @@ class ConfirmRoleView(View):
 
     pass
 
+"""
+Page 3: Set button action
+"""
+class ButtonActionView(View):
+    def __init__(self, button_data: RoleButtonData):
+        super().__init__(timeout=None)
+        self.button_data = button_data
+        self.index = 2
+        self.add_item(PrevButton(self.index, self.button_data))
+        self.add_item(CancelButton(self.index))
+        self.add_item(NextButton(self.index, self.button_data))
+
+    @discord.ui.button(
+        label='Give role',
+        custom_id='give_action_button',
+        style=discord.ButtonStyle.success,
+        row=1
+    )
+    async def success_style_button(self, interaction: discord.Interaction, button):
+        print("🔘 Chose give_action_button")
+        try:
+            self.button_data.button_action = 'give'
+            embed, view = _increment_index(self.index, self.button_data)
+
+            await interaction.response.edit_message(embed=embed, view=view)
+        except Exception as e:
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+        
+
+    @discord.ui.button(
+        label='Take role',
+        custom_id='take_action_button',
+        style=discord.ButtonStyle.danger,
+        row=1
+    )
+    async def primary_style_button(self, interaction: discord.Interaction, button):
+        print("🔘 Chose take_action_button")
+        try:
+            self.button_data.button_action = 'take'
+            embed, view = _increment_index(self.index, self.button_data)
+
+            await interaction.response.edit_message(embed=embed, view=view)
+        except Exception as e:
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
+    @discord.ui.button(
+        label='Toggle role',
+        custom_id='toggle_action_button',
+        style=discord.ButtonStyle.primary,
+        row=1
+    )
+    async def secondary_style_button(self, interaction: discord.Interaction, button):
+        print("Chose secondary button")
+        try:
+            self.button_data.button_action = 'toggle'
+            embed, view = _increment_index(self.index, self.button_data)
+
+            await interaction.response.edit_message(embed=embed, view=view)
+        except Exception as e:
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
 
 """
-Page 3: Set button style
+Page 4: Set button style
 """
 class ButtonStyleView(View):
     def __init__(self, button_data: RoleButtonData):
         super().__init__(timeout=None)
         self.button_data = button_data
-        self.index = 2
+        self.index = 3
         self.add_item(PrevButton(self.index, self.button_data))
         self.add_item(CancelButton(self.index))
         self.add_item(NextButton(self.index, self.button_data))
@@ -366,13 +447,13 @@ class ButtonStyleView(View):
                 await on_generic_error(spamchannel, interaction, e)
 
 """
-Page 3: Set label/emoji
+Page 5: Set label/emoji
 """
 class LabelEmojiView(View):
     def __init__(self, button_data: RoleButtonData):
         super().__init__(timeout=None)
         self.button_data = button_data
-        self.index = 3
+        self.index = 4
         self.clear_items()
         self.add_item(PrevButton(self.index, self.button_data))
         self.add_item(CancelButton(self.index))
@@ -392,14 +473,14 @@ class LabelEmojiView(View):
         await interaction.response.send_modal(EnterLabelEmojiModal(self.button_data))
 
 """
-Page 5: Confirm
+Page 6: Confirm
 """
 class ConfirmConfigView(View):
     def __init__(self, button_data: RoleButtonData):
         super().__init__(timeout=None)
         self.button_data = button_data
         self.message: discord.Message = self.button_data.message
-        self.index = 4
+        self.index = 5
         self.clear_items()
         self.add_item(PrevButton(self.index, self.button_data))
         self.add_item(CancelButton(self.index))
@@ -545,7 +626,7 @@ class EnterRoleIDModal(Modal):
 class EnterLabelEmojiModal(Modal):
     def __init__(self, button_data: RoleButtonData, title = 'Set Label & Emoji', timeout = None):
         self.button_data = button_data
-        self.index = 3
+        self.index = 4
         if self.button_data.button_label:
             self.button_label.default = self.button_data.button_label
         if self.button_data.button_emoji:
