@@ -1,6 +1,7 @@
 # import discord so discord.ButtonStyle has meaning
 import discord
 
+
 class RoleButtonData:
 
     def __init__(self, info_dict=None):
@@ -22,6 +23,14 @@ class RoleButtonData:
         self.button_emoji = info_dict.get('button_emoji', None)
         self.button_style = info_dict.get('button_style', None)
         self.button_action = info_dict.get('button_action', 'toggle')
+        self.button_list = []
+
+    def reset(self):
+        self.role_id = None
+        self.button_label = None
+        self.button_emoji = None
+        self.button_style = None
+        self.button_action = None
 
     def to_dictionary(self):
         """
@@ -52,7 +61,6 @@ class RoleButtonData:
         print(f"Style is {style}")
 
         return style
-        
 
     def __str__(self):
         """
