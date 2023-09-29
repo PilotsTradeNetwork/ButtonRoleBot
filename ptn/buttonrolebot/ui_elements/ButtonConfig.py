@@ -502,13 +502,10 @@ class ConfirmConfigView(View):
             # edit it into the target message
             await self.message.edit(view=view)
             
-
-            # TODO lol
-
             # increment index by 1
             final_index = self.index + 1
             embed = button_config_embed(final_index, self.button_data)
-            view = StressButtonView()
+            view = StressButtonView(self.button_data)
             await interaction.response.edit_message(embed=embed, view=view)
         except HTTPException as e:
             try:
@@ -526,14 +523,16 @@ class ConfirmConfigView(View):
 Final page: success!
 """
 class StressButtonView(View):
-    def __init__(self):
+    def __init__(self, button_data):
+        self.button_data: RoleButtonData = button_data
         super().__init__(timeout=None)
 
     @discord.ui.button(
         label='That was stressful',
         style=discord.ButtonStyle.danger,
         custom_id="stress_button",
-        emoji='😰'
+        emoji='😰',
+        row=0
     )
 
     async def stress_button(self, interaction: discord.Interaction, button):
@@ -548,7 +547,8 @@ class StressButtonView(View):
         label='I\'m amazing!',
         style=discord.ButtonStyle.success,
         custom_id="amazing_button",
-        emoji='💪'
+        emoji='💪',
+        row=0
     )
 
     async def amazing_button(self, interaction: discord.Interaction, button):
@@ -559,6 +559,42 @@ class StressButtonView(View):
         except:
             await interaction.followup.send(embed=embed, ephemeral=True)
 
+    @discord.ui.button(
+        label='Add another',
+        style=discord.ButtonStyle.primary,
+        custom_id="add_another_button",
+        emoji='➕',
+        row=1
+    )
+
+    async def add_another_button(self, interaction: discord.Interaction, button):
+        print("Received add_another_button click")
+        try:
+            # update our original message object to include our new view
+            original_message: discord.Message = self.button_data.message
+            print('Fetching updated message...')
+            new_message: discord.Message = await original_message.channel.fetch_message(original_message.id)
+            print(f'Fetched message as {new_message}')
+
+            # create a fresh instance of button_data based on our updated message object
+            print('create a fresh instance of button_data')
+            info_dict = {"message": new_message}
+            button_data = RoleButtonData(info_dict)
+            print(button_data)
+
+            # set embed back to original
+            print('set embed back to original')
+            embed = button_config_embed(0, button_data)
+            # set view back to original
+            print('set view back to original')
+            view = _select_view_from_index(0, button_data)
+            print('update message')
+            await interaction.response.edit_message(embed=embed, view=view)
+        except Exception as e:
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
 
 """
 MODALS
@@ -630,9 +666,13 @@ class EnterLabelEmojiModal(Modal):
         if self.button_data.button_label:
             print(f'Default set to {self.button_data.button_label}')
             self.button_label.default = str(self.button_data.button_label)
+        else:
+            self.button_label.default = None
         if self.button_data.button_emoji:
             print(f'Default set to {self.button_data.button_emoji}')
             self.button_emoji.default = str(self.button_data.button_emoji)
+        else:
+            self.button_emoji.default = None
         # TODO: above caused some weirdness after latest update until specifying strings
         super().__init__(title=title, timeout=timeout)
 
