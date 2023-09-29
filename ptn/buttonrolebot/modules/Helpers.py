@@ -8,7 +8,7 @@ Depends on: ErrorHandler, Constants
 import os
 from urllib.parse import urlparse
 
-#import validators
+# import validators
 import validators
 
 # import discord.py
