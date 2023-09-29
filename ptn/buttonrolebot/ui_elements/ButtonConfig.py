@@ -105,7 +105,7 @@ class CancelButton(Button):
             label="✗",
             style=discord.ButtonStyle.danger,
             custom_id="generic_cancel_button",
-            row = 2 if self.index == 2 or self.index == 3 else 1
+            row=2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -125,7 +125,7 @@ class PrevButton(Button):
             label="◄",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_previous_button",
-            row = 2 if self.index == 2 or self.index == 3 else 1
+            row=2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -146,7 +146,7 @@ class NextButton(Button):
             label="►",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_next_button",
-            row = 2 if self.index == 2 or self.index == 3 else 1
+            row=2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -224,7 +224,7 @@ class ConfirmButton(Button):
             label='✔',
             style=discord.ButtonStyle.success,
             custom_id="generic_confirm_button",
-            row = 2 if self.index == 2 or self.index == 3 else 1
+            row=2 if self.index == 2 or self.index == 3 else 1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -490,7 +490,7 @@ class ConfirmConfigView(View):
             label='✔ Create Button',
             style=discord.ButtonStyle.success,
             custom_id="final_submit_button",
-            row = 1
+            row=1
             )
 
     async def final_submit_button(self, interaction: discord.Interaction, button):
@@ -519,9 +519,11 @@ class ConfirmConfigView(View):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
+
 """
 Final page: success!
 """
+
 class StressButtonView(View):
     def __init__(self, button_data):
         self.button_data: RoleButtonData = button_data
