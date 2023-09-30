@@ -4,11 +4,9 @@ A module for helper functions called by other modules.
 Depends on: ErrorHandler, Constants
 
 """
-# import os
+# import libraries
 import os
 from urllib.parse import urlparse
-
-# import validators
 import validators
 
 # import discord.py
@@ -24,6 +22,7 @@ from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENS
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
+from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error, CommandPermissionError
@@ -121,6 +120,26 @@ def _remove_embed_field(embed, field_name_to_remove):
         pass
 
     return embed
+
+# populate embed_fields from an embed in a message
+def _get_embed_from_message(message: discord.Message):
+    print('Called _get_embed_from_message')
+    for embed in message.embeds:
+        embed_fields = {
+            'embed_title': embed.title,
+            'embed_description': embed.description,
+            'embed_image_url': embed.image.url,
+            'embed_footer': embed.footer.text,
+            'embed_thumbnail_url': embed.thumbnail.url,
+            'embed_author_name': embed.author.name,
+            'embed_author_avatar_url': embed.author.icon_url,
+            'embed_color': embed.color
+        }
+    # generate embed_data from the sent embed
+    embed_data = EmbedData(embed_fields)
+    print(f'Instantiated embed_data as: {embed_data}')
+    # return embed_data instance to function
+    return embed_data    
 
 # check if a role exists
 async def check_role_exists(interaction, role_id):
