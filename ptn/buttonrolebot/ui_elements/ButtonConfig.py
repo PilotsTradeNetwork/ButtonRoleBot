@@ -58,6 +58,8 @@ from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_butto
 """
 Issues:
 - prev button not working - why?
+- I need to get role_id etc at the end from each button. Maybe instead of passing around a list of button objects, I should pass around button_data instances? Then turn them into buttons every time they're udpated? 
+  - or I can use the custom_id with a regex match to extract the values from the buttons
 - confirm button needs to be reworked to basically be like the cancel button (delete the message)
 - MasterConfirmButton needs to inherit old confirm button func, but add all buttons in the list to the original message
 - final success page should be moved to masterconfirm response
