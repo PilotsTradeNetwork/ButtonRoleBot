@@ -63,6 +63,8 @@ EMBED_COLOUR_QU = 0x00d9ff              # que?
 EMBED_COLOUR_OK = 0x80ff80              # we're good here thanks, how are you?
 EMBED_COLOUR_PTN_DEFAULT = 42971     # used by various embeds throughout the server
 
+DEFAULT_BUTTON_LABEL = 'New Button'
+
 EMOJI_DONE = '🟢'
 EMOJI_NOT_DONE = '⭕'
 
@@ -74,6 +76,7 @@ BUTTON_CHOOSE_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/202
 BUTTON_SWEAT_THUMBNAIL = "https://pilotstradenetwork.com/wp-content/uploads/2023/09/two_buttons_sweating_guy.png"
 
 HOORAY_GIFS = [
+    "https://media.tenor.com/pbucMdEU8IkAAAAC/finished-elijah-wood.gif", # it's done
     "https://media.tenor.com/wPuTaxlyovsAAAAC/bluey-hooray.gif", # Bluey
     "https://media.tenor.com/v4FpeS4fxBUAAAAC/celebration-celebrate.gif", # keytar confetti party
     "https://media.tenor.com/t2BKH5zl5z4AAAAC/cookie-monster-sesame-street.gif", # cookie monster
