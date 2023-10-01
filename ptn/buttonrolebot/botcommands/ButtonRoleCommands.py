@@ -33,7 +33,7 @@ from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 
 # local modules
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Embeds import _generate_embed_from_dict
+from ptn.buttonrolebot.modules.Embeds import _generate_embed_from_dict, button_edit_heading_embed
 from ptn.buttonrolebot.modules.Helpers import check_roles, check_channel_permissions, _get_embed_from_message
 
 spamchannel = bot.get_channel(channel_botspam())
@@ -115,21 +115,10 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
             await on_generic_error(spamchannel, interaction, e)
         return
 
-
-                
-
-
     try: 
 
         # generate our preview message/embeds
-        heading_embed = discord.Embed(
-            title='🔘 MANAGE MESSAGE BUTTONS: PREVIEW',
-            description=f"This is a preview of {message.jump_url} with your buttons attached.\n" \
-                         "- ✗: Cancel\n- ➕: Add button\n- ✔: Confirm previewed buttons and add to message\n- 💥: Remove button\n"
-                         "Once you have added a button, click on it at any time to edit it. When finished, "
-                         " use ✔ to add the currently previewed buttons to your message.",
-            color=constants.EMBED_COLOUR_QU
-        )
+        heading_embed = button_edit_heading_embed(message)
 
         # get the embed from the message
         embed_data = _get_embed_from_message(message)
@@ -185,7 +174,8 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
             # create a default button_data instance to start us off
             button_data_info_dict = {
                 'message': message,
-                'preview_message': interaction
+                'preview_message': interaction,
+                'role_id': None
             }
             button_data = RoleButtonData(button_data_info_dict)
             print(button_data)

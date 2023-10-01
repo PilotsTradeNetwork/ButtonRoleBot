@@ -26,41 +26,10 @@ from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, H
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
-from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
+from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed, button_edit_heading_embed
 from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view
 
-
-"""
-1. Generate an embed, heading_embed, declaring the below embed to be our preview.
-   (Done in ButtonRoleCommands.py)
-2. Generate a second embed, preview_embed, showing the content of the message-embed
-   the buttons are to be added to. To this message, containing two embeds, we attach a
-   button, "New button", and a button in the final row, "Cancel". Both of these embeds
-   are attached to our initial interaction.response
-   (Done in ButtonRoleCommands.py)
-3. Clicking "New button" displays the existing button creator interface as an
-   interaction.response to the button press. "New button" is updated as the user moves
-   back and forward through the creator.
-4. Confirming a button via this interface adds it to our list of buttons to be added,
-   but does not add them until we confirm all buttons.
-5. The user can edit a button they've already added by clicking on it in the preview.
-6. Once at least one button has been added to the preview, an "Add button(s) to message"
-   button will appear in the final row.
-7. We allow the creation of up to 23 buttons, as we need the final two slots for "Cancel"
-   and "Add to message".
-8. The existing final page of the button creator is removed from individual button
-   creation and repurposed for when all buttons are sent using the Add to message button.
-9. ~~Each preview button would require its own unique instance of button_data and a unique
-   identifier so it can be selected and edited.~~ ETA: Actually, we can just pull all the
-   necessary data from the preview buttons themselves
-10. This interface could also be used for a button editor #18 
-"""
-
-"""
-Issues:
-- We need to change the calling command to edit existing buttons too
-- We should update the embeds for each index stage
-"""
+spamchannel = bot.get_channel(channel_botspam())
 
 async def _check_for_button_conflict(interaction: discord.Interaction, buttons: list, button_data: RoleButtonData):
     print(f"Called _check_for_button_conflict with  {button_data}")
@@ -250,11 +219,7 @@ Multi-part message supported by embeds:
  - View: button 'Confirm'. On click: next page. button: 'Back'. On click: previous page
 3. Choose button appearance - 4x buttons corresponding to colour 
 4. Choose button text and emoji - button to pop up modal, back button
-5. Confirm choices - OK button, back button, cancel button
-
 """
-
-spamchannel = bot.get_channel(channel_botspam())
 
 """
 INDEX FUNCTIONS
@@ -428,6 +393,18 @@ class MasterAddButton(Button):
         print("Received ➕ master_add_button click")
         try:
             view = View(timeout=None)
+
+            # check we don't have too many buttons
+            if len(self.buttons) > 1:
+                print("⚠ Too many buttons! Can't add any more.")
+                embed = discord.Embed(
+                    description="❌ This message already has the maximum amount of buttons this bot will allow (20).",
+                    color=constants.EMBED_COLOUR_ERROR
+                )
+                embed.set_footer(text="You can dismiss this message.")
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
+            else:
+                print(f"Number of buttons: {len(self.buttons)}")
 
             # create new default button_data instance with its own unique identifier
             print("⏳ Generating UUID and defining new button_data...")
@@ -977,6 +954,8 @@ class EnterRoleIDModal(Modal):
         self.index = 0
         if self.button_data.role_id:
             self.role_id.default = self.button_data.role_id
+        else:
+            self.role_id.default = None
         super().__init__(title=title, timeout=timeout)
 
     role_id = discord.ui.TextInput(
