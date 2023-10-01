@@ -150,3 +150,18 @@ def amazing_embed():
     )
     embed.set_image(url=gif)
     return embed
+
+
+def button_edit_heading_embed(message: discord.Message):
+    embed = discord.Embed(
+            title='🔘 MANAGE MESSAGE BUTTONS: PREVIEW',
+            description=f"This is a preview of {message.jump_url} with your buttons attached.\n\n" \
+                         "In the __Button Manager__ view (this view):\n" \
+                         "- ✗: Cancel\n- +: Add button\n- ✔: Confirm previewed buttons and add to message\n\n" \
+                         "In the __Button Edit__ view (click on any button):\n" \
+                         "-◀ / ▶: Previous/Next page\n- ✔: Commit button settings\n💥: Delete button\n\n" \
+                         "Once you have added a button, click on it at any time to edit it. When finished, " \
+                         " use ✔ in the Button Manager view to change the message's buttons to those previewed.",
+            color=EMBED_COLOUR_QU
+        )
+    return embed
