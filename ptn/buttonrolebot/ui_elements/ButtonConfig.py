@@ -395,7 +395,7 @@ class MasterAddButton(Button):
             view = View(timeout=None)
 
             # check we don't have too many buttons
-            if len(self.buttons) > 1:
+            if len(self.buttons) > 20:
                 print("⚠ Too many buttons! Can't add any more.")
                 embed = discord.Embed(
                     description="❌ This message already has the maximum amount of buttons this bot will allow (20).",
