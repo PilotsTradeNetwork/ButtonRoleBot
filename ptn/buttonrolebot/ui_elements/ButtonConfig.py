@@ -4,8 +4,9 @@ A set of discord.ui elements for customising buttons added by BRB.
 """
 # import libraries
 import emoji
+import random
 import traceback
-import time
+import uuid
 
 # import discord
 import discord
@@ -21,12 +22,12 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, HOORAY_GIFS
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_button_to_view
+from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view
 
 
 """
@@ -57,53 +58,137 @@ from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_butto
 
 """
 Issues:
-- prev button not working - why?
-- I need to get role_id etc at the end from each button. Maybe instead of passing around a list of button objects, I should pass around button_data instances? Then turn them into buttons every time they're udpated? 
-  - or I can use the custom_id with a regex match to extract the values from the buttons
-- confirm button needs to be reworked to basically be like the cancel button (delete the message)
-- MasterConfirmButton needs to inherit old confirm button func, but add all buttons in the list to the original message
-- final success page should be moved to masterconfirm response
-
+- We need to change the calling command to edit existing buttons too
+- We should update the embeds for each index stage
 """
+
+async def _check_for_button_conflict(interaction: discord.Interaction, buttons: list, button_data: RoleButtonData):
+    print(f"Called _check_for_button_conflict with  {button_data}")
+    try:
+        role_id = button_data.role_id
+        action = button_data.button_action
+        unique_id = button_data.unique_id
+
+        conflicting_data = None
+
+        print("⏳ Searching for conflicts in buttons list...")
+        for i, button_data_instance in enumerate(buttons):
+            if button_data_instance.role_id == role_id and button_data_instance.button_action == action:
+                if button_data_instance.unique_id != unique_id:
+                    print(f"⚠ Found conflict with {button_data_instance.unique_id}")
+                    conflicting_data = button_data_instance
+                    break
+
+        if conflicting_data is not None:
+            print("▶ Notifying user of conflict.")
+            embed = discord.Embed(
+                description="❌ Each message can only have one button with a given role and action combination. " \
+                           f"You already have a button with role <@&{button_data_instance.role_id}> and "
+                            f"action {button_data_instance.button_action} attached to this message as " \
+                            f"**{button_data_instance.button_emoji} {button_data_instance.button_label}**",
+                            
+                color=constants.EMBED_COLOUR_ERROR
+            )
+            embed.set_footer(text="You can dismiss this message.")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return True
+
+        else:
+            print("✅ No conflict detected.")
+            return False
+
+    except Exception as e:
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+
+
+async def _remove_button(interaction: discord.Interaction, buttons: list, button_data: RoleButtonData):
+    print(f'Called _remove_button with {button_data}')
+    try:
+        original_interaction: discord.Interaction = button_data.preview_message
+        view = View(timeout=None)
+
+        target_id = button_data.unique_id
+
+        index_to_delete = None
+
+        print("⏳ Searching for current button in buttons list...")
+        for i, button_data_instance in enumerate(buttons):
+            if button_data_instance.unique_id == target_id:
+                print(f"Found button {button_data_instance.unique_id}")
+                index_to_delete = i
+                break
+
+        if index_to_delete is not None:
+            print("▶ Removing this button_data instance")
+            del buttons[index_to_delete]
+            print(buttons)
+
+        print("⏳ Updating view with remaining buttons...")
+        for button_data_instance in buttons:
+            button = NewButton(buttons, button_data_instance)
+            print(f"🔘 Generated button from set {button_data_instance.unique_id}")
+            view.add_item(button)
+
+        view.add_item(MasterCancelButton())
+        view.add_item(MasterAddButton(buttons, button_data))
+        if buttons:
+            view.add_item(MasterCommitButton(buttons, button_data))
+
+        await original_interaction.edit_original_response(view=view)
+
+    except Exception as e:
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+
 
 async def _update_preview(interaction, buttons: list, button_data: RoleButtonData):
     print(f'Called update_preview with {button_data}')
     try:
         original_interaction: discord.Interaction = button_data.preview_message
         view = View(timeout=None)
-        new_button = NewButton(buttons, button_data)
 
-        target_id = button_data.temp_id
+        target_id = button_data.unique_id
 
         index_to_replace = None
 
         # we need to differentiate our current button in the list of buttons attached to the view
         # we then need to replace it with our updated button, insert it into the list, and add them all back
-        print("⏳ Searching for current button in buttons list")
-        for i, button in enumerate(buttons):
-            if button.custom_id == target_id:
-                print(f"Found button {button.custom_id}")
+        print("⏳ Searching for current button in buttons list...")
+        for i, button_data_instance in enumerate(buttons):
+            if button_data_instance.unique_id == target_id:
+                print(f"Found button {button_data_instance.unique_id}")
                 index_to_replace = i
                 break
 
         if index_to_replace is not None:
-            print("Replacing existing button with updated button")
-            buttons[index_to_replace] = new_button
+            print("▶ Replacing existing button_data instance with updated button_data")
+            buttons[index_to_replace] = button_data
         else:
-            print("No existing button found, appending to list")
-            buttons.append(new_button)
+            print("▶ No existing button_data instance found, appending to list")
+            buttons.append(button_data)
 
-        for button in buttons:
+        print("⏳ Adding list items to view...")
+        for button_data_instance in buttons:
+            button = NewButton(buttons, button_data_instance)
+            print(f"🔘 Generated button from set {button_data_instance.unique_id}")
             view.add_item(button)
 
         view.add_item(MasterCancelButton())
-        view.add_item(MasterAddButton(buttons, button_data)) 
+        view.add_item(MasterAddButton(buttons, button_data))
+        if buttons:
+            view.add_item(MasterCommitButton(buttons, button_data))
 
+        print("▶ Updating master view.")
         await original_interaction.edit_original_response(view=view)
 
-        return button
-
     except Exception as e:
+        print(e)
+        traceback.print_exc()
         try:
             raise GenericError(e)
         except Exception as e:
@@ -117,10 +202,10 @@ class NewButton(Button):
         self.spamchannel = bot.get_channel(channel_botspam())
         self.emoji_value = str(self.button_data.button_emoji) if self.button_data.button_emoji else None
         super().__init__(
-            label=str(self.button_data.button_label),
+            label=str(self.button_data.button_label) if self.button_data.button_label else None,
             emoji=self.emoji_value,
             style=self.button_data.button_style,
-            custom_id=self.button_data.temp_id
+            custom_id=self.button_data.unique_id
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -192,16 +277,13 @@ def _select_view_from_index(index, buttons, button_data: RoleButtonData):
     elif index == 4:
         print("Assigning 4: LabelEmojiView")
         view = LabelEmojiView(buttons, button_data)
-    elif index == 5:
-        print("Assigning 5: ConfirmConfigView")
-        view = ConfirmConfigView(buttons, button_data)
     return view
 
 
 # function to increment index by one
 def _increment_index(index, buttons, button_data: RoleButtonData):
     print("Called _increment_index")
-    if index <= 5: # TODO: actual max index number here
+    if index <= 4: 
         index += 1
         # generate new embed
         embed = button_config_embed(index, button_data)
@@ -211,20 +293,104 @@ def _increment_index(index, buttons, button_data: RoleButtonData):
 
 
 # function to decrement index by one
-def _decrement_index(index, button_data: RoleButtonData):
+def _decrement_index(index, buttons, button_data: RoleButtonData):
     print("Called _decrement_index")
     if index >= 1:
         index -= 1
         # generate new embed
         embed = button_config_embed(index, button_data)
         # assign new view
-        view = _select_view_from_index(index, button_data)
+        view = _select_view_from_index(index, buttons, button_data)
     return embed, view
 
 
 """
 GLOBAL COMPONENT BUTTONS
 """
+class MasterCommitButton(Button):
+    def __init__(self, buttons, button_data):
+        print("Initialising MasterCommitButton")
+        self.buttons: list = buttons
+        self.button_data: RoleButtonData = button_data
+        self.message: discord.Message = self.button_data.message
+        self.spamchannel = bot.get_channel(channel_botspam())
+        super().__init__(
+            label='✔',
+            style=discord.ButtonStyle.success,
+            custom_id="master_commit_button",
+            row=4 # max row number
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        print("Received ✔ master_commit_button click")
+
+        button_incomplete = False
+
+        try:
+            # make sure we have buttons!
+            if not self.buttons:
+                embed = discord.Embed(
+                    description=f"❌ No buttons to commit! Use the **➕** button to add one.",
+                                color=constants.EMBED_COLOUR_ERROR
+                )
+                embed.set_footer(text="You can dismiss this message.")
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
+            else:
+                print("✔ Button list is populated.")
+
+            # make sure our buttons have the needed data
+            for button_data_instance in self.buttons:
+                if button_data_instance.role_object == None:
+                    button_incomplete = True
+                    missing_information = 'missing an attached role'
+                    pass
+                elif button_data_instance.button_label == DEFAULT_BUTTON_LABEL:
+                    button_incomplete = True
+                    missing_information = 'using the default label'
+                    pass
+
+                if button_incomplete:
+                    embed = discord.Embed(
+                        description=f"❌ **{button_data_instance.button_emoji} {button_data_instance.button_label}** " \
+                                    f"is {missing_information}. Please click on it to edit it and correct this.",
+                                    color=constants.EMBED_COLOUR_ERROR
+                    )
+                    embed.set_footer(text="You can dismiss this message.")
+                    return await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                    print("✔ No incomplete buttons found.")
+
+            # create the buttons
+
+            view = await _add_role_buttons_to_view(interaction, self.buttons, self.button_data.message)
+
+            # edit it into the target message
+            await self.message.edit(view=view)
+            
+            # display our success message TODO
+            gif = random.choice(HOORAY_GIFS)
+
+            embed = discord.Embed(
+                description=f':partying_face: **Button(s) updated on {self.message.jump_url}**'
+            )
+       
+            embed.set_image(url=gif)
+
+            view = StressButtonView(self.button_data)
+            await interaction.response.edit_message(embed=embed, view=view)
+
+        except HTTPException as e:
+            try:
+                raise BadRequestError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
+        except Exception as e:
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+
 class MasterCancelButton(Button):
     def __init__(self):
         print("Initialising MasterCancelButton")
@@ -263,29 +429,29 @@ class MasterAddButton(Button):
         try:
             view = View(timeout=None)
 
-            timestamp = int(time.time())
-
-            # create new default button_data instance
+            # create new default button_data instance with its own unique identifier
+            print("⏳ Generating UUID and defining new button_data...")
+            unique_id = str(uuid.uuid4())
             button_data_info_dict = {
                 'message': self.button_data.message,
                 'preview_message': self.button_data.preview_message,
-                'temp_id': str(timestamp)
+                'unique_id': unique_id
             }
             button_data = RoleButtonData(button_data_info_dict)
             print(button_data)
 
-            print("⏳ Defining New Button...")
-            new_button = NewButton(self.buttons, button_data)
-
             print("⏳ Appending to buttons list...")
-            self.buttons.append(new_button)
+            self.buttons.append(button_data)
 
             print("⏳ Adding list items to view...")
-            for button in self.buttons:
+            for button_data_instance in self.buttons:
+                button = NewButton(self.buttons, button_data_instance)
+                print(f"🔘 Generated button from set {button_data_instance.unique_id}")
                 view.add_item(button)
 
             view.add_item(MasterCancelButton())
             view.add_item(MasterAddButton(self.buttons, self.button_data))
+            view.add_item(MasterCommitButton(self.buttons, button_data))
 
             print("▶ Updating message with view.")
             return await interaction.response.edit_message(view=view)
@@ -299,29 +465,38 @@ class MasterAddButton(Button):
                 await on_generic_error(self.spamchannel, interaction, e)
 
 
-class CancelButton(Button):
-    def __init__(self, index):
+class DeleteButton(Button):
+    def __init__(self, index, buttons, button_data: RoleButtonData):
         self.index = index
+        self.buttons = buttons
+        self.button_data: RoleButtonData = button_data
+        self.spamchannel = bot.get_channel(channel_botspam())
         super().__init__(
-            label="✗",
+            label="",
+            emoji='💥',
             style=discord.ButtonStyle.danger,
-            custom_id="generic_cancel_button",
-            row=1 if self.index == 2 or self.index == 3 else 0
+            custom_id="delete_button",
+            row=1
+            # row=1 if self.index == 2 or self.index == 3 else 0
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print("Received ✖ generic_cancel_button click")
-        await interaction.response.defer()
-
+        print("Received ✖ delete_button click")
         try:
-            await interaction.message.delete() # TODO which of these actually works? whoops
-        except Exception as e:
-            print(e)
+            await _remove_button(interaction, self.buttons, self.button_data)
 
-        try:
+            await interaction.response.defer()
+
+            print("▶ Deleting button interface.")
             await interaction.delete_original_response()
+        
         except Exception as e:
             print(e)
+            traceback.print_exc()
+            try:
+                raise GenericError(e)
+            except Exception as e:
+                await on_generic_error(self.spamchannel, interaction, e)
 
 class PrevButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
@@ -332,7 +507,7 @@ class PrevButton(Button):
             label="◄",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_previous_button",
-            row=1 if self.index == 2 or self.index == 3 else 0
+            row=1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -354,7 +529,7 @@ class NextButton(Button):
             label="►",
             style=discord.ButtonStyle.secondary,
             custom_id="generic_next_button",
-            row=1 if self.index == 2 or self.index == 3 else 0
+            row=1
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -424,25 +599,38 @@ class NextButton(Button):
         else:
             await interaction.response.defer()
 
-class ConfirmButton(Button):
-    def __init__(self, index, buttons, button_data: RoleButtonData):
+class CommitButton(Button):
+    def __init__(self, index, button_data: RoleButtonData):
         self.index = index
-        self.buttons = buttons
-        self.button_data = button_data
+        self.button_data: RoleButtonData = button_data
         super().__init__(
             label='✔',
             style=discord.ButtonStyle.success,
-            custom_id="generic_confirm_button",
-            row=1 if self.index == 2 or self.index == 3 else 0
+            custom_id="generic_commit_button",
+            row=1
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print("Received ✅ generic_confirm_button click")
-        # increment index by 1
-        embed, view = _increment_index(self.index, self.buttons, self.button_data)
-        # update message
-        await interaction.response.edit_message(embed=embed, view=view)
+        print("Received ✅ generic_commit_button click")
+        # check we have needed input for a full button
+        if self.button_data.button_label == DEFAULT_BUTTON_LABEL or \
+           self.button_data.role_id == None or \
+           self.button_data.role_object == None:
+            print("Received commit button press but user has not entered all required data")
+            embed = discord.Embed(
+                description="❌ You must input all required elements before committing a button.",
+                color=constants.EMBED_COLOUR_ERROR
+            )
+            embed.set_footer(text="You can dismiss this message.")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
+        else:
+            await interaction.response.defer()
+
+            try:
+                await interaction.delete_original_response()
+            except Exception as e:
+                print(e)
 
 """
 INDEXED VIEWS
@@ -461,8 +649,9 @@ class ChooseRoleView(View):
         self.index = 0
         self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
         self.add_item(self.button_enter_role_id)
+        self.add_item(CommitButton(self.index, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -491,11 +680,26 @@ class ConfirmRoleView(View):
         self.index = 1
         self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
-        self.add_item(ConfirmButton(self.index, self.buttons, self.button_data))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
+        self.add_item(self.confirm_role_button)
+        self.add_item(CommitButton(self.index, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
-    pass
+    @discord.ui.button(
+        label='Assign role to button',
+        emoji='☑',
+        style=discord.ButtonStyle.primary,
+        custom_id="confirm_role_button",
+        row=0
+    )
+
+    async def confirm_role_button(self, interaction: discord.Interaction, button):
+        print("Received ✅ confirm_role_button click")
+        # increment index by 1
+        embed, view = _increment_index(self.index, self.buttons, self.button_data)
+        # update message
+        await interaction.response.edit_message(embed=embed, view=view)
+
 
 """
 Page 3: Set button action
@@ -507,7 +711,8 @@ class ButtonActionView(View):
         self.button_data: RoleButtonData = button_data
         self.index = 2
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
+        self.add_item(CommitButton(self.index, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -520,11 +725,21 @@ class ButtonActionView(View):
         print("🔘 Chose give_action_button")
         try:
             self.button_data.button_action = 'give'
-            embed, view = _increment_index(self.index, self.buttons, self.button_data)
+            # set some defaults for a role give button
+            self.button_data.button_label = 'Give Role Button'
+            self.button_data.button_style = discord.ButtonStyle.success
 
-            await _update_preview(interaction, self.buttons, self.button_data)
+            # check for conflicts with existing buttons
+            if await _check_for_button_conflict(interaction, self.buttons, self.button_data):
+                return
 
-            await interaction.response.edit_message(embed=embed, view=view)
+            else:
+                embed, view = _increment_index(self.index, self.buttons, self.button_data)
+
+                await _update_preview(interaction, self.buttons, self.button_data)
+
+                await interaction.response.edit_message(embed=embed, view=view)
+
         except Exception as e:
             try:
                 raise GenericError(e)
@@ -542,6 +757,9 @@ class ButtonActionView(View):
         print("🔘 Chose take_action_button")
         try:
             self.button_data.button_action = 'take'
+            # set some defaults for a role take button
+            self.button_data.button_label = 'Take Role Button'
+            self.button_data.button_style = discord.ButtonStyle.danger
             embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
             await _update_preview(interaction, self.buttons, self.button_data)
@@ -563,6 +781,9 @@ class ButtonActionView(View):
         print("Chose secondary button")
         try:
             self.button_data.button_action = 'toggle'
+            # set some defaults for a role toggle button
+            self.button_data.button_label = 'Toggle Role Button'
+            self.button_data.button_style = discord.ButtonStyle.primary
             embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
             await _update_preview(interaction, self.buttons, self.button_data)
@@ -585,7 +806,8 @@ class ButtonStyleView(View):
         self.button_data = button_data
         self.index = 3
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
+        self.add_item(CommitButton(self.index, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -684,12 +906,13 @@ class LabelEmojiView(View):
         self.index = 4
         self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
         self.add_item(self.label_emoji_button)
+        self.add_item(CommitButton(self.index, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
-        label='Choose',
+        label='Enter Label & Emoji',
         custom_id='label_emoji_button',
         style=discord.ButtonStyle.primary,
         emoji='🏷',
@@ -700,57 +923,9 @@ class LabelEmojiView(View):
 
         await interaction.response.send_modal(EnterLabelEmojiModal(self.buttons, self.button_data))
 
-"""
-Page 6: Confirm
-"""
-class ConfirmConfigView(View):
-    def __init__(self, buttons, button_data: RoleButtonData):
-        self.buttons = buttons
-        super().__init__(timeout=None)
-        self.button_data = button_data
-        self.message: discord.Message = self.button_data.message
-        self.index = 5
-        self.clear_items()
-        self.add_item(PrevButton(self.index, self.buttons, self.button_data))
-        self.add_item(CancelButton(self.index))
-        self.add_item(self.final_submit_button)
-
-    @discord.ui.button(
-            label='✔ Create Button',
-            style=discord.ButtonStyle.success,
-            custom_id="final_submit_button",
-            row=0
-            )
-
-    async def final_submit_button(self, interaction: discord.Interaction, button):
-        print("Received ✅ final_submit_button click")
-        try:
-            # create the button!
-            view = await _add_role_button_to_view(interaction, self.button_data)
-
-            # edit it into the target message
-            await self.message.edit(view=view)
-            
-            # increment index by 1
-            final_index = self.index + 1
-            embed = button_config_embed(final_index, self.button_data)
-            view = StressButtonView(self.button_data)
-            await interaction.response.edit_message(embed=embed, view=view)
-        except HTTPException as e:
-            try:
-                raise BadRequestError(e)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-
-        except Exception as e:
-            try:
-                raise GenericError(e)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-
 
 """
-Final page: success!
+After buttons sent view
 """
 
 class StressButtonView(View):
@@ -789,43 +964,6 @@ class StressButtonView(View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except:
             await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @discord.ui.button(
-        label='Add another',
-        style=discord.ButtonStyle.primary,
-        custom_id="add_another_button",
-        emoji='➕',
-        row=1
-    )
-
-    async def add_another_button(self, interaction: discord.Interaction, button):
-        print("Received add_another_button click")
-        try:
-            # update our original message object to include our new view
-            original_message: discord.Message = self.button_data.message
-            print('Fetching updated message...')
-            new_message: discord.Message = await original_message.channel.fetch_message(original_message.id)
-            print(f'Fetched message as {new_message}')
-
-            # create a fresh instance of button_data based on our updated message object
-            print('create a fresh instance of button_data')
-            info_dict = {"message": new_message}
-            button_data = RoleButtonData(info_dict)
-            print(button_data)
-
-            # set embed back to original
-            print('set embed back to original')
-            embed = button_config_embed(0, button_data)
-            # set view back to original
-            print('set view back to original')
-            view = _select_view_from_index(0, button_data)
-            print('update message')
-            await interaction.response.edit_message(embed=embed, view=view)
-        except Exception as e:
-            try:
-                raise GenericError(e)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
 
 """
 MODALS
@@ -978,12 +1116,14 @@ class EnterLabelEmojiModal(Modal):
         if self.button_data.button_emoji:
             print("✅ Bot thinks we have an emoji")
 
+        # update preview then 'close' this interface by deleting message
         await _update_preview(interaction, self.buttons, self.button_data)
 
-        embed, view = _increment_index(self.index, self.buttons, self.button_data)
+        await interaction.response.defer()
 
-        # edit our message to next in sequence
-        print("Updating message with new embed and view...")
-        await interaction.response.edit_message(embed=embed, view=view)
+        try:
+            await interaction.delete_original_response()
+        except Exception as e:
+            print(e)
 
 

@@ -74,38 +74,11 @@ def button_config_embed(index, button_data: RoleButtonData):
     embed.set_thumbnail(url=BUTTON_CHOOSE_THUMBNAIL)
     embed.set_footer(text=footer)
 
-    if index >= 5:
-        # add summary fields
-        if button_data.button_label is not None:
-            label = button_data.button_label
-        else:
-            label = '*None*'
-        embed.add_field(name="Label", value=label)
-
-        if button_data.button_emoji is not None:
-            emoji = button_data.button_emoji
-        else:
-            emoji = '*None*'
-        embed.add_field(name="Emoji", value=emoji)
-
-        style = button_data.get_button_style_name()
-        embed.add_field(name="Style", value=style)
-
-        action: str = button_data.button_action
-        embed.add_field(name="Action", value=action.title())
-
-        role_id = button_data.role_id
-        embed.add_field(name="Target Role", value=f'<@&{role_id}>\n`{role_id}`')
-
-        message = button_data.message
-        embed.add_field(name="Target Message", value=f'{message.jump_url}\n`{message.id}`')
-
     if index == 0:
         print("Returning embed for index 0")
-        embed.title="ADD ROLE BUTTON TO MESSAGE"
+        # embed.title="ADD ROLE BUTTON TO MESSAGE"
         embed.description = \
-            f'This will add a button to {message.jump_url} that can be used by anyone pressing it to manage a selected role.\n\n' \
-            ':one: :rocket: **First enter the ROLE ID of the role you wish the button to add/remove**.\n\n' \
+            ':one: :rocket: **Enter the ROLE ID of the role you wish the button to add/remove**.\n\n' \
             '*You can find a role ID using `Discord\'s developer mode` by right-clicking on a role ' \
             'in a user\'s role list or in the server\'s roles menu. Or, you can `mention the role ' \
             'in a message` and put a backslash `\\` in front of it before sending to get its ID: Put the mention in ' \
@@ -149,31 +122,6 @@ def button_config_embed(index, button_data: RoleButtonData):
             'the emoji in a message, and putting a backslash `\` in front of it before sending.\n' \
             '- Default emojis can be entered using an emoji keyboard (Windows: `Win`+`.`) '\
             'or copy/pasting from a sent Discord message.'
-
-        return embed
-
-    elif index == 5:
-        print("Returning embed for index 5")
-        print(button_data)
-        # embed.title="CONFIRM DETAILS"
-        embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
-
-        embed.description = \
-            ':six: :trophy: Congratulations! You win a button! Here is your prize. **Please indicate if you wish to accept it**:' 
-
-        return embed
-
-    elif index == 6:
-        print("Returning embed for index 6")
-        # embed.title="BUTTON COMPLETE"
-        embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
-
-        gif = random.choice(HOORAY_GIFS)
-
-        embed.description = \
-            ':partying_face: **Button Created**!'
-        
-        embed.set_image(url=gif)
 
         return embed
 

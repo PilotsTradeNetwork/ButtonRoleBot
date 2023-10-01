@@ -4,8 +4,9 @@ Our main Cog for BRB commands.
 """
 
 # libraries
-import asyncio
-from datetime import datetime, timezone
+import re
+import traceback
+import uuid
 
 # discord.py
 import discord
@@ -27,12 +28,12 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # local views
 from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons
-from ptn.buttonrolebot.ui_elements.ButtonConfig import NewButton, MasterCancelButton, MasterAddButton
+from ptn.buttonrolebot.ui_elements.ButtonConfig import MasterCancelButton, MasterAddButton, MasterCommitButton, NewButton
 from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 
 # local modules
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Embeds import button_config_embed, _generate_embed_from_dict
+from ptn.buttonrolebot.modules.Embeds import _generate_embed_from_dict
 from ptn.buttonrolebot.modules.Helpers import check_roles, check_channel_permissions, _get_embed_from_message
 
 spamchannel = bot.get_channel(channel_botspam())
@@ -101,10 +102,10 @@ async def remove_role_buttons(interaction: discord.Interaction, message: discord
 
 
 # add role button
-@bot.tree.context_menu(name='Add Role Button')
+@bot.tree.context_menu(name='Manage Role Buttons')
 @check_roles(any_elevated_role)
 @check_channel_permissions()
-async def add_role_button(interaction: discord.Interaction, message: discord.Message):
+async def manage_role_buttons(interaction: discord.Interaction, message: discord.Message):
     print(f"Received Add Role Button context interaction from {interaction.user} in {interaction.channel}")
     # check message was sent by bot
     if not message.author == bot.user:
@@ -114,12 +115,19 @@ async def add_role_button(interaction: discord.Interaction, message: discord.Mes
             await on_generic_error(spamchannel, interaction, e)
         return
 
+
+                
+
+
     try: 
+
         # generate our preview message/embeds
         heading_embed = discord.Embed(
-            title='🔘 ADD BUTTONS: PREVIEW',
-            description=f"This is a preview of {message.jump_url} with your buttons attached. " \
-                         "When you have added at least one button, use ✅ to add them to the message.",
+            title='🔘 MANAGE MESSAGE BUTTONS: PREVIEW',
+            description=f"This is a preview of {message.jump_url} with your buttons attached.\n" \
+                         "- ✗: Cancel\n- ➕: Add button\n- ✔: Confirm previewed buttons and add to message\n- 💥: Remove button\n"
+                         "Once you have added a button, click on it at any time to edit it. When finished, "
+                         " use ✔ to add the currently previewed buttons to your message.",
             color=constants.EMBED_COLOUR_QU
         )
 
@@ -134,32 +142,76 @@ async def add_role_button(interaction: discord.Interaction, message: discord.Mes
         print("▶ Sending preview message...")
         await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
-        # create default button_data instance to start us off
-        button_data_info_dict = {
-            'message': message,
-            'preview_message': interaction
-        }
-        button_data = RoleButtonData(button_data_info_dict)
-        print(button_data)
+        # define empty list to hold our button_data instances
+        buttons = []
+
+        role_id_pattern = r':role:(\d+):' # match our role ID 
+        action_pattern = r':action:(\w+)' # match our action
+
+        # check if message has a view already
+        if message.components:
+            print("⚠ Existing view found on message, adding its buttons to our edit view.")
+            view = View.from_message(message)
+            # use existing buttons to populate button_data and add to buttons
+            for child in view.children:
+                if isinstance(child, discord.ui.Button):
+                    print(f"Found button: {child.emoji} {child.label} | {child.custom_id}")
+                    unique_id = str(uuid.uuid4()) # generate a unique ID for each button_data instance
+
+                    # use re to extract role ID and action from custom ID
+                    match_role_id = re.search(role_id_pattern, child.custom_id)
+                    match_action = re.search(action_pattern, child.custom_id)
+
+                    role_id = int(match_role_id.group(1)) if match_role_id else None
+                    action = str(match_action.group(1)) if match_action else None
+
+                    button_data_info_dict = {
+                        'message': message,
+                        'preview_message': interaction,
+                        'role_id': role_id,
+                        'button_label': child.label,
+                        'button_emoji': child.emoji,
+                        'button_style': child.style,
+                        'unique_id': unique_id,
+                        'button_action': action
+                    }
+                    # generate button_data
+                    print("▶ Generating RoleButtonData instance from button.")
+                    button_data = RoleButtonData(button_data_info_dict)
+                    # append to our button list
+                    buttons.append(button_data)
+
+        else:
+            # create a default button_data instance to start us off
+            button_data_info_dict = {
+                'message': message,
+                'preview_message': interaction
+            }
+            button_data = RoleButtonData(button_data_info_dict)
+            print(button_data)
 
         print("⏳ Defining view...")
         view = View(timeout=None)
-        # button = NewButton(button_data)
-        buttons = []
-        # view.add_item(button)
+
+        print(f'Buttons list: {buttons}')
+        if buttons:
+            for button_data_instance in buttons:
+                button = NewButton(buttons, button_data_instance)
+                print(f"🔘 Generated button from set {button_data_instance.unique_id}")
+                view.add_item(button)
 
         # add master buttons
-        cancelbutton = MasterCancelButton()
-        addbutton = MasterAddButton(buttons, button_data)
-        view.add_item(cancelbutton)
-        view.add_item(addbutton)
-        # view.add_item(MasterAddButton(buttons, button_data))
+        view.add_item(MasterCancelButton())
+        view.add_item(MasterAddButton(buttons, button_data))
+        if buttons:
+            view.add_item(MasterCommitButton(buttons, button_data))
 
         print("▶ Adding view to original response...")
         await interaction.edit_original_response(view=view)
 
     except Exception as e:
         print(e)
+        traceback.print_exc()
         try:
             raise GenericError(e)
         except Exception as e:
