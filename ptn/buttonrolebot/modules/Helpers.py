@@ -158,40 +158,44 @@ async def check_role_exists(interaction, role_id):
     
 # add role button to message
 # this one is kind of a big deal
-async def _add_role_button_to_view(interaction: discord.Interaction, button_data: RoleButtonData):
-    print("Called _add_role_button_to_view")
-    print(button_data)
-    message: discord.Message = button_data.message
-    style: discord.ButtonStyle = button_data.button_style
-    # role: discord.Role = button_data.role_object
+async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, message: discord.Message):
+    print("Called _add_role_buttons_to_view")
 
-    print("Instantiating DynamicButton component")
-    button = DynamicButton(button_data.button_action, button_data.role_id, message.id)
+    print("Defining empty view")
+    view = discord.ui.View(timeout=None)
 
-    print("Setting button properties")
-    button.item.label = button_data.button_label if button_data.button_label else None
-    button.item.emoji = button_data.button_emoji if button_data.button_emoji else None
-    button.item.style = style
+    for button_data_instance in buttons:
+        print(button_data_instance)
+        style: discord.ButtonStyle = button_data_instance.button_style
+        print("Instantiating DynamicButton component")
+        button = DynamicButton(button_data_instance.button_action, button_data_instance.role_id, button_data_instance.message.id)
+        print(f"🔘 Generated DynamicButton from set {button_data_instance.unique_id}")
 
-    print("Checking if message has a view")
+        print("Setting button properties")
+        button.item.label = button_data_instance.button_label if button_data_instance.button_label else None
+        button.item.emoji = button_data_instance.button_emoji if button_data_instance.button_emoji else None
+        button.item.style = style
+
+        print("Adding dynamic button component")
+        view.add_item(button)
+
+        print("Logging to bot-spam")
+        embed = discord.Embed(
+            description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to {button_data_instance.button_action} the <@&{button_data_instance.role_id}> role.",
+            color=EMBED_COLOUR_OK
+        )
+
+        spamchannel = bot.get_channel(channel_botspam())
+        await spamchannel.send(embed=embed)
+
+    # this no longer necessary but we'll keep it around for now
+    """print("Checking if message has a view")
     if message.components:
         print("Existing view detected, we will add our button to it")
         view = View.from_message(message)
         view.timeout=None
     else:
         print("Defining empty view")
-        view = discord.ui.View(timeout=None)
-
-    print("Adding dynamic button component")
-    view.add_item(button)
-
-    print("Logging to bot-spam")
-    embed = discord.Embed(
-        description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to {button_data.button_action} the <@&{button_data.role_id}> role.",
-        color=EMBED_COLOUR_OK
-    )
-
-    spamchannel = bot.get_channel(channel_botspam())
-    await spamchannel.send(embed=embed)
+        view = discord.ui.View(timeout=None)"""
 
     return view
