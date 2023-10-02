@@ -22,12 +22,14 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS
+from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS, role_brb, \
+    role_council, role_mod
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed, button_edit_heading_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view
+from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view, button_role_checks
+
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -535,14 +537,9 @@ class NextButton(Button):
                 self.button_data.role_object = role
 
             # check if we have permission to manage this role
-            bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-            if bot_member.top_role <= role:
-                print("We don't have permission for this role")
-                try:
-                    raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
-                except Exception as e:
-                    await on_generic_error(spamchannel, interaction, e)
-                return
+            permission = await button_role_checks(interaction, role)
+            if not permission: return
+
 
         elif self.index == 2:
             if self.button_data.button_action == None:
@@ -992,14 +989,8 @@ class EnterRoleIDModal(Modal):
             self.button_data.role_object = role
 
         # check if we have permission to manage this role
-        bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-        if bot_member.top_role <= role or role.managed:
-            print("We don't have permission for this role")
-            try:
-                raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
+        permission = await button_role_checks(interaction, role)
+        if not permission: return
 
         embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
