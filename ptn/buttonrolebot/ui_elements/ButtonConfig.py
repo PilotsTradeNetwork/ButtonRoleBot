@@ -32,6 +32,25 @@ from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_butto
 
 spamchannel = bot.get_channel(channel_botspam())
 
+
+def _find_lowest_available_row(buttons: list):
+    print(f'Called _find_lowest_available_row for {buttons}')
+    # Initialize a dictionary to count the number of instances in each row
+    row_counts = {0: 0, 1: 0, 2: 0, 3: 0}
+
+    # Count the instances in each row
+    for button_data_instance in buttons:
+        row_counts[button_data_instance.button_row] += 1
+
+    # Find the lowest available row number (between 0 and 3) with fewer than 5 instances
+    for row in range(4):
+        if row_counts[row] < 5:
+            return row
+
+    # If all rows have 5 instances, return None to indicate that there are no available rows
+    return None
+
+
 async def _reposition_button(interaction: discord.Interaction, buttons, button_data: RoleButtonData, action):
     print(f'Called {_reposition_button.__name__} with action: {action}')
     row = button_data.button_row
@@ -84,6 +103,18 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
                 else:
                     new_row = row - 1
+
+            # check we don't have too many buttons in this row already
+            count = sum(1 for button in buttons if button.button_row == new_row)
+            if count >= 5:
+                print("Could not move button to row: Row already full.")
+                embed = discord.Embed(
+                    description='⚠ Could not move button because target row already has the maximum number of buttons (5). '\
+                                'You may need to move a button out of the target row to move your button in.',
+                    color=constants.EMBED_COLOUR_ERROR
+                )
+                embed.set_footer(text="You can dismiss this message.")
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
 
             print(f"▶ Updating row from {row} to {new_row}")
             button_data.button_row = new_row
@@ -452,7 +483,7 @@ class MasterCancelButton(Button):
     async def callback(self, interaction: discord.Interaction):
         print("Received ✖ master_cancel_button click")
         embed = discord.Embed(
-            description="❎ **Button creation cancelled**.",
+            description="❎ **Button Manager closed without making changes.**.",
             color=constants.EMBED_COLOUR_QU
         )
         embed.set_footer(text="You can dismiss this message.")
@@ -478,10 +509,10 @@ class MasterAddButton(Button):
             view = View(timeout=None)
 
             # check we don't have too many buttons
-            if len(self.buttons) > 20:
+            if len(self.buttons) >= 20:
                 print("⚠ Too many buttons! Can't add any more.")
                 embed = discord.Embed(
-                    description="❌ This message already has the maximum amount of buttons this bot will allow (20).",
+                    description="❌ Can't add any more buttons: this message already has the maximum amount of buttons this bot will allow (20).",
                     color=constants.EMBED_COLOUR_ERROR
                 )
                 embed.set_footer(text="You can dismiss this message.")
@@ -489,13 +520,28 @@ class MasterAddButton(Button):
             else:
                 print(f"Number of buttons: {len(self.buttons)}")
 
+            # check for lowest free row number
+            lowest_available_row = _find_lowest_available_row(self.buttons)
+            print(f'Lowest available row: {lowest_available_row}')
+            if lowest_available_row is not None:
+                button_row = lowest_available_row
+            else:
+                print("⚠ All rows are full! Can't add any more buttons.")
+                embed = discord.Embed(
+                    description="❌ Couldn't find any free rows to add a button to. Maximum is 4 rows of 5 buttons.",
+                    color=constants.EMBED_COLOUR_ERROR
+                )
+                embed.set_footer(text="You can dismiss this message.")
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
+
             # create new default button_data instance with its own unique identifier
             print("⏳ Generating UUID and defining new button_data...")
             unique_id = str(uuid.uuid4())
             button_data_info_dict = {
                 'message': self.button_data.message,
                 'preview_message': self.button_data.preview_message,
-                'unique_id': unique_id
+                'unique_id': unique_id,
+                'button_row': button_row
             }
             button_data = RoleButtonData(button_data_info_dict)
             print(button_data)
@@ -578,7 +624,9 @@ class PrevButton(Button):
             # update message
             await interaction.response.edit_message(embed=embed, view=view)
         else:
-            await interaction.response.defer()
+            embed, view = _decrement_index(1, self.buttons, self.button_data)
+            # update message
+            await interaction.response.edit_message(embed=embed, view=view)
 
 class NextButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
@@ -647,12 +695,14 @@ class NextButton(Button):
                 return
 
         # increment index by 1
-        if self.index <= 7:
+        if self.index <= 3:
             embed, view = _increment_index(self.index, self.buttons, self.button_data)
             # update message
             await interaction.response.edit_message(embed=embed, view=view)
         else:
-            await interaction.response.defer()
+            embed, view = _increment_index(3, self.buttons, self.button_data)
+            # update message
+            await interaction.response.edit_message(embed=embed, view=view)
 
 class CommitButton(Button):
     def __init__(self, index, button_data: RoleButtonData):
@@ -713,14 +763,14 @@ class CallEditButton(Button):
         self.buttons = buttons
         self.button_data: RoleButtonData = button_data
         super().__init__(
-            emoji='⚙',
+            emoji='🔙',
             style=discord.ButtonStyle.primary,
             custom_id="generic_editor_button",
             row=1
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print("Received ⚙ generic_editor_button click")
+        print("Received 🔙 generic_editor_button click")
         # generate new embed
         embed = button_config_embed(self.index, self.button_data)
         # assign new view
