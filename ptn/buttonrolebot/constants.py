@@ -64,6 +64,7 @@ EMBED_COLOUR_OK = 0x80ff80              # we're good here thanks, how are you?
 EMBED_COLOUR_PTN_DEFAULT = 42971     # used by various embeds throughout the server
 
 DEFAULT_BUTTON_LABEL = 'New Button'
+DEFAULT_BUTTON_LABELS = [DEFAULT_BUTTON_LABEL, 'Give Role Button', 'Take Role Button', 'Toggle Role Button']
 
 EMOJI_DONE = '🟢'
 EMOJI_NOT_DONE = '⭕'
