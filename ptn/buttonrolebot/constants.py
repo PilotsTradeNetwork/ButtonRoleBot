@@ -37,6 +37,7 @@ TOKEN = os.getenv('BRB_DISCORD_TOKEN_PROD') if _production else os.getenv('BRB_D
 PROD_DISCORD_GUILD = 800080948716503040 # PTN server ID
 PROD_CHANNEL_BOTSPAM = 801258393205604372 # PTN bot-spam channel
 PROD_CHANNEL_BOTDEV = 1153789139938988083 # PTN channel related to development for buttonrolebot
+PROD_ROLE_BRB = 1156316939589791767 # PTN assigned role for ButtonRoleBot
 PROD_ROLE_COUNCIL = 800091021852803072 # PTN Council role
 PROD_ROLE_MOD = 813814494563401780 # PTN Mod role
 PROD_ROLE_CMENTOR = 863521103434350613 # PTN CM role
@@ -49,6 +50,7 @@ PROD_EMOJI_O7 = 806138784294371368 # PTN :o7: emoji
 TEST_DISCORD_GUILD = 818174236480897055 # PANTS server ID
 TEST_CHANNEL_BOTSPAM = 1152273868073996298 # PANTS bot spam channel
 TEST_CHANNEL_BOTDEV = 1153794231438168095 # PANTS channel related to development for buttonrolebot
+TEST_ROLE_BRB = 1153806420790214718 # PANTS assigned role for ButtonRoleBot
 TEST_ROLE_COUNCIL = 877586918228000819 # PANTS Council role
 TEST_ROLE_MOD = 903292469049974845 # PANTS Mod role
 TEST_ROLE_CMENTOR = 877586763672072193 # PANTS CM role
@@ -64,6 +66,7 @@ EMBED_COLOUR_OK = 0x80ff80              # we're good here thanks, how are you?
 EMBED_COLOUR_PTN_DEFAULT = 42971     # used by various embeds throughout the server
 
 DEFAULT_BUTTON_LABEL = 'New Button'
+DEFAULT_BUTTON_LABELS = [DEFAULT_BUTTON_LABEL, 'Give Role Button', 'Take Role Button', 'Toggle Role Button']
 
 EMOJI_DONE = '🟢'
 EMOJI_NOT_DONE = '⭕'
@@ -132,6 +135,9 @@ def channel_botspam():
 
 def channel_botdev():
     return PROD_CHANNEL_BOTDEV if _production else TEST_CHANNEL_BOTDEV
+
+def role_brb():
+    return PROD_ROLE_BRB if _production else TEST_ROLE_BRB
 
 def role_council():
     return PROD_ROLE_COUNCIL if _production else TEST_ROLE_COUNCIL
