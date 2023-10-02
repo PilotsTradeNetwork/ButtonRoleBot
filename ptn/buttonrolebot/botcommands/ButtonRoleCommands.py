@@ -154,10 +154,20 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                     role_id = int(match_role_id.group(1)) if match_role_id else None
                     action = str(match_action.group(1)) if match_action else None
 
+                    # resolve role on the server if possible
+                    role_object = None
+                    if role_id:
+                        try:
+                            role_object = discord.utils.get(interaction.guild.roles, id=role_id)
+                        except:
+                            print(f"No role object found for {role_id}")
+                            pass # we'll handle this on the button manager side
+
                     button_data_info_dict = {
                         'message': message,
                         'preview_message': interaction,
                         'role_id': role_id,
+                        'role_object': role_object,
                         'button_label': child.label,
                         'button_emoji': child.emoji,
                         'button_style': child.style,
