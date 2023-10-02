@@ -326,6 +326,15 @@ class MasterCommitButton(Button):
                 else:
                     print("✔ No incomplete buttons found.")
 
+            # make sure our user has permission for all the buttons' roles
+            for button_data_instance in self.buttons:
+                role = discord.utils.get(interaction.guild.roles, id=button_data_instance.role_id)
+                permission = await button_role_checks(interaction, role, button_data_instance)
+                if not permission:
+                    return
+
+            print("✔ User has permission for all button roles")
+
             # create the buttons
 
             view = await _add_role_buttons_to_view(interaction, self.buttons, self.button_data.message)
@@ -536,7 +545,7 @@ class NextButton(Button):
                 self.button_data.role_object = role
 
             # check if we have permission to manage this role
-            permission = await button_role_checks(interaction, role)
+            permission = await button_role_checks(interaction, role, self.button_data)
             if not permission: return
 
 
@@ -988,7 +997,7 @@ class EnterRoleIDModal(Modal):
             self.button_data.role_object = role
 
         # check if we have permission to manage this role
-        permission = await button_role_checks(interaction, role)
+        permission = await button_role_checks(interaction, role, self.button_data)
         if not permission: return
 
         embed, view = _increment_index(self.index, self.buttons, self.button_data)
