@@ -6,6 +6,7 @@ Depends on: ErrorHandler, Constants
 """
 # import libraries
 import os
+import traceback
 from urllib.parse import urlparse
 import validators
 
@@ -18,7 +19,8 @@ from discord.ui import View
 from ptn.buttonrolebot.bot import bot, DynamicButton
 
 # import constants
-from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS, EMBED_COLOUR_OK
+from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS, EMBED_COLOUR_OK, role_brb, \
+    role_mod, role_council
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
@@ -52,7 +54,7 @@ async def checkroles_actual(interaction: discord.Interaction, permitted_role_ids
         print(author_roles)
         print(permitted_roles)
         permission = True if any(x in permitted_roles for x in author_roles) else False
-        print(permission)
+        print(f'Permission: {permission}')
         return permission, permitted_roles
     except Exception as e:
         print(e)
@@ -90,6 +92,41 @@ def check_channel_permissions(): # does this work? I have no idea. Discord seems
                 raise
         return permission
     return app_commands.check(checkuserperms)
+
+
+async def button_role_checks(interaction: discord.Interaction, role: discord.Role):
+    print(f"Called button_role_checks for {role}")
+    try:
+        # check if we have permission to manage this role
+        bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+        if bot_member.top_role <= role or role.managed:
+            print("We don't have permission for this role")
+            try:
+                raise CustomError(f"I don't have permission to manage <@&{role.id}>.")
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+            return False
+
+        bot_role = discord.utils.get(interaction.guild.roles, id=role_brb())
+        print(bot_role)
+        if bot_role < role:
+            permitted_role_ids = [role_council(), role_mod()]
+            result = await checkroles_actual(interaction, permitted_role_ids)
+            permission = result[0]
+            if not permission:
+                print("User doesn't have permission to manage this role.")
+                try:
+                    error = f'To manage <@&{role.id}> you require one of the following roles: <@&{role_mod()}>  •  <@&{role_council()}>'
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return False
+
+        print("Permission OK")
+        return True
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
 
 """
 Helpers
