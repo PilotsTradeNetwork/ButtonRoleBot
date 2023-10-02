@@ -22,8 +22,7 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS, role_brb, \
-    role_council, role_mod
+from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
