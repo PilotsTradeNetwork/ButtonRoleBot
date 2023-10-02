@@ -22,12 +22,13 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, HOORAY_GIFS
+from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
 from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed, button_edit_heading_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view
+from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view, button_role_checks
+
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -309,7 +310,7 @@ class MasterCommitButton(Button):
                     button_incomplete = True
                     missing_information = 'missing an attached role'
                     pass
-                elif button_data_instance.button_label == DEFAULT_BUTTON_LABEL:
+                elif button_data_instance.button_label in DEFAULT_BUTTON_LABELS:
                     button_incomplete = True
                     missing_information = 'using the default label'
                     pass
@@ -324,6 +325,15 @@ class MasterCommitButton(Button):
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
                 else:
                     print("✔ No incomplete buttons found.")
+
+            # make sure our user has permission for all the buttons' roles
+            for button_data_instance in self.buttons:
+                role = discord.utils.get(interaction.guild.roles, id=button_data_instance.role_id)
+                permission = await button_role_checks(interaction, role, button_data_instance)
+                if not permission:
+                    return
+
+            print("✔ User has permission for all button roles")
 
             # create the buttons
 
@@ -535,14 +545,9 @@ class NextButton(Button):
                 self.button_data.role_object = role
 
             # check if we have permission to manage this role
-            bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-            if bot_member.top_role <= role:
-                print("We don't have permission for this role")
-                try:
-                    raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
-                except Exception as e:
-                    await on_generic_error(spamchannel, interaction, e)
-                return
+            permission = await button_role_checks(interaction, role, self.button_data)
+            if not permission: return
+
 
         elif self.index == 2:
             if self.button_data.button_action == None:
@@ -992,14 +997,8 @@ class EnterRoleIDModal(Modal):
             self.button_data.role_object = role
 
         # check if we have permission to manage this role
-        bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-        if bot_member.top_role <= role or role.managed:
-            print("We don't have permission for this role")
-            try:
-                raise CustomError(f"I don't have permission to manage <@&{self.button_data.role_id}>.")
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
+        permission = await button_role_checks(interaction, role, self.button_data)
+        if not permission: return
 
         embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
@@ -1079,6 +1078,7 @@ class EnterLabelEmojiModal(Modal):
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
+                return
             
             elif emoji.emoji_count(self.button_data.button_emoji) > 1: # should trigger if we have a ZWJ emoji or too many emojis
                 print("number of emojis in input is not 1")
@@ -1089,6 +1089,7 @@ class EnterLabelEmojiModal(Modal):
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
+                return
 
         print(f'Button emoji set: {self.button_data.button_emoji}')
 
