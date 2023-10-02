@@ -234,21 +234,29 @@ async def edit_bot_embed(interaction: discord.Interaction, message: discord.Mess
             await on_generic_error(spamchannel, interaction, e)
         return
     
-    instruction_embed = discord.Embed(
-        title='⚙ EDITING EMBED',
-        color=constants.EMBED_COLOUR_QU
-    )
+    try:
+        instruction_embed = discord.Embed(
+            title='⚙ EDITING EMBED',
+            color=constants.EMBED_COLOUR_QU
+        )
 
-    # get the embed from the message
-    embed_data = await _get_embed_from_message(message)
+        # get the embed from the message
+        embed_data = _get_embed_from_message(message)
 
-    preview_embed = _generate_embed_from_dict(embed_data)
+        preview_embed = _generate_embed_from_dict(embed_data)
 
-    view = EmbedGenButtons(instruction_embed, embed_data, message, 'edit')
+        view = EmbedGenButtons(instruction_embed, embed_data, message, 'edit')
 
-    embeds = [instruction_embed, preview_embed]
+        embeds = [instruction_embed, preview_embed]
 
-    await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
+        await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
 
 """
 BRB COMMANDS COG
