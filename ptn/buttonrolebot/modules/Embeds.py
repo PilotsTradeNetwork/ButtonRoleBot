@@ -67,7 +67,7 @@ def button_config_embed(index, button_data: RoleButtonData):
     if index < 5:
         footer = f"Step {index + 1} of 5. Use 🔀 to reposition button."
     else:
-        footer = "Use 🔙 to return to Button Editor"
+        footer = "Use ↩️ to return to Button Editor"
 
     embed = discord.Embed(color=EMBED_COLOUR_QU)
 
@@ -131,9 +131,9 @@ def button_config_embed(index, button_data: RoleButtonData):
         embed.description = \
             f':twisted_rightwards_arrows: **REPOSITION your button** .\n\n' \
             "- You can have up to 4 rows with up to 5 buttons each.\n" \
-            "- :mobile_phone: apps can't fit full rows, so buttons will " \
+            "- Mobile apps :mobile_phone: can't fit full rows, so buttons will " \
             "display differently, and positioning buttons may not work as expected.\n" \
-            "- Use 🔙 to return to Button Editor."
+            "- Use ↩️ to return to Button Editor."
 
         return embed
 
