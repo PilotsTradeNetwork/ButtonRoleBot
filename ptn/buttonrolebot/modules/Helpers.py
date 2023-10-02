@@ -213,6 +213,7 @@ async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, m
         button.item.label = button_data_instance.button_label if button_data_instance.button_label else None
         button.item.emoji = button_data_instance.button_emoji if button_data_instance.button_emoji else None
         button.item.style = style
+        button.item.row = button_data_instance.button_row
 
         print("Adding dynamic button component")
         view.add_item(button)
