@@ -22,7 +22,7 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, HOORAY_GIFS
+from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS
 
 # import local modules
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
@@ -309,7 +309,7 @@ class MasterCommitButton(Button):
                     button_incomplete = True
                     missing_information = 'missing an attached role'
                     pass
-                elif button_data_instance.button_label == DEFAULT_BUTTON_LABEL:
+                elif button_data_instance.button_label in DEFAULT_BUTTON_LABELS:
                     button_incomplete = True
                     missing_information = 'using the default label'
                     pass
@@ -1079,6 +1079,7 @@ class EnterLabelEmojiModal(Modal):
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
+                return
             
             elif emoji.emoji_count(self.button_data.button_emoji) > 1: # should trigger if we have a ZWJ emoji or too many emojis
                 print("number of emojis in input is not 1")
@@ -1089,6 +1090,7 @@ class EnterLabelEmojiModal(Modal):
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
+                return
 
         print(f'Button emoji set: {self.button_data.button_emoji}')
 
