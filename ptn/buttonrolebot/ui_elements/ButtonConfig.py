@@ -120,6 +120,22 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
             button_data.button_row = new_row
             buttons[current_index] = button_data
 
+            # re-order our list by row
+            button_rows = {}
+            # Group buttons by row
+            print('▶ Repacking list based on new row hierarchy.')
+            for button_data_instance in buttons:
+                if button_data_instance.button_row not in button_rows:
+                    button_rows[button_data_instance.button_row] = []
+                button_rows[button_data_instance.button_row].append(button_data_instance)
+
+            # Re-order the list based on row allocations
+            ordered_buttons = []
+            for row in sorted(button_rows.keys()):  # Sort rows in ascending order
+                ordered_buttons.extend(button_rows[row])
+            print(f"Original button list: {buttons}\nOrdered list: {ordered_buttons}")
+            buttons = ordered_buttons
+
         # update preview
         await _update_preview(Interaction, buttons, button_data)
 
@@ -450,7 +466,8 @@ class MasterCommitButton(Button):
             gif = random.choice(HOORAY_GIFS)
 
             embed = discord.Embed(
-                description=f':partying_face: **Button(s) updated on {self.message.jump_url}**'
+                description=f':partying_face: **Button(s) updated on {self.message.jump_url}**',
+                color=constants.EMBED_COLOUR_OK
             )
        
             embed.set_image(url=gif)
@@ -556,7 +573,7 @@ class MasterAddButton(Button):
                 view.add_item(button)
 
             view.add_item(MasterCancelButton())
-            view.add_item(MasterAddButton(self.buttons, self.button_data))
+            if len(self.buttons) < 20: view.add_item(MasterAddButton(self.buttons, self.button_data)) # only add this if there's room for more buttons
             view.add_item(MasterCommitButton(self.buttons, button_data))
 
             print("▶ Updating message with view.")
@@ -1332,7 +1349,12 @@ class EnterLabelEmojiModal(Modal):
         # update preview
         await _update_preview(interaction, self.buttons, self.button_data)
 
-        # page view forward
-        embed, view = _increment_index(self.index, self.buttons, self.button_data)
-        await interaction.response.edit_message(embed=embed, view=view)
+        # remove the button edit UI by deleting message
+        # we have to defer response since deleting is not an interaction.response
+        await interaction.response.defer()
+
+        try:
+            await interaction.delete_original_response()
+        except Exception as e:
+            print(e)
 
