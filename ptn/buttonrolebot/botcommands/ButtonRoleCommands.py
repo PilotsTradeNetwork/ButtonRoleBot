@@ -170,6 +170,7 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                         'role_object': role_object,
                         'button_label': child.label,
                         'button_emoji': child.emoji,
+                        'button_row': child.row,
                         'button_style': child.style,
                         'unique_id': unique_id,
                         'button_action': action
@@ -177,6 +178,7 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                     # generate button_data
                     print("▶ Generating RoleButtonData instance from button.")
                     button_data = RoleButtonData(button_data_info_dict)
+                    print(button_data)
                     # append to our button list
                     buttons.append(button_data)
 

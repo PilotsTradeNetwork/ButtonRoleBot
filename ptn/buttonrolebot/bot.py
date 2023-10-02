@@ -11,11 +11,12 @@ import re
 
 # import discord
 import discord
+from discord import Forbidden
 from discord.ext import commands
 
 # import constants
 from ptn.buttonrolebot._metadata import __version__
-from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK, role_council, role_mod
+from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK, role_council, role_mod, EMBED_COLOUR_ERROR
 
 # import classes
 # from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
@@ -66,6 +67,30 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
             # get role object
             role = discord.utils.get(interaction.guild.roles, id=self.role_id)
 
+            # check if we have permissions for this role
+            bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+            if bot_member.top_role <= role or role.managed:
+                print(f"⚠ We don't have permission for {role}")
+                try:
+                    # notify bot-spam
+                    message: discord.Message = await interaction.channel.fetch_message(self.message_id)
+                    embed = discord.Embed(
+                        description=f':warning: <@{bot_member.id}> does not have permission to manage <@&{role.id}>. Called from {message.jump_url}.\n\n'
+                                    'Bot role is not high enough in role hierarchy to grant this role. **Please move the bot role higher or edit the offending button**.',
+                        color=EMBED_COLOUR_ERROR
+                    )
+                    content = f'🔔 <@&{role_mod()}>: Button failed to grant role <@&{role.id}>'
+                    await spamchannel.send(content=content, embed=embed)
+                except Exception as e:
+                    print(f'Error notifying bot-spam: {e}')
+
+                try:
+                    # notify user
+                    raise CustomError(f"Sorry, I don't have permission to manage <@&{role.id}>. Please contact a <@&{role_mod()}> or <@&{role_council()}> member.")
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return False
+
             # check if user has it
             print(f'Check whether user has role: "{role}"')
             
@@ -98,15 +123,49 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
+        except Forbidden as e:
+            print(e)
+            try:
+                # notify bot-spam
+                message: discord.Message = await interaction.channel.fetch_message(self.message_id)
+                embed = discord.Embed(
+                    description=f':warning: <@{bot_member.id}> does not have permission to grant <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. **Bot role needs Manage Roles permission**.',
+                    color=EMBED_COLOUR_ERROR
+                )
+                embed.set_footer(text=e)
+                await spamchannel.send(embed=embed)
+            except Exception as e:
+                print(f'Error notifying bot-spam: {e}')
+
+            print("Raising error for user")
+            # raise error
+            try:
+                error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
+                raise CustomError(error)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+            return 
+
         except Exception as e:
             print(e)
             try:
-                error = f"Role not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}>"
+                # notify bot-spam
+                message: discord.Message = await interaction.channel.fetch_message(self.message_id)
+                embed = discord.Embed(
+                    description=f':warning: <@{bot_member.id}> failed administering <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. Error given:\n{e}',
+                    color=EMBED_COLOUR_ERROR
+                )
+                await spamchannel.send(embed=embed)
+            except Exception as e:
+                print(f'Error notifying bot-spam: {e}')
+
+            print("Raising error for user")
+            # raise error
+            try:
+                error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
                 raise CustomError(error)
-            except Exception as e2:
-                print(e2)
-                error= f"User received message: {error}\nOriginal Error: ({e})"
-                await on_generic_error(spamchannel, interaction, error)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
             return
 
 
