@@ -64,10 +64,10 @@ def button_config_embed(index, button_data: RoleButtonData):
     print("called button_config_embed")
     message: discord.Message = button_data.message
 
-    if index < 6:
+    if index < 5:
         footer = f"Step {index + 1} of 5. Use 🔀 to reposition button."
     else:
-        footer = "Use ⚙ to return to Button Editor"
+        footer = "Use 🔙 to return to Button Editor"
 
     embed = discord.Embed(color=EMBED_COLOUR_QU)
 
@@ -129,7 +129,11 @@ def button_config_embed(index, button_data: RoleButtonData):
         print("Returning embed for index 5")
         # embed.title="LABEL & EMOJI"
         embed.description = \
-            f':six: :twisted_rightwards_arrows: **REPOSITION your button** (optional).\n\n'
+            f':twisted_rightwards_arrows: **REPOSITION your button** .\n\n' \
+            "- You can have up to 4 rows with up to 5 buttons each.\n" \
+            "- :mobile_phone: apps can't fit full rows, so buttons will " \
+            "display differently, and positioning buttons may not work as expected.\n" \
+            "- Use 🔙 to return to Button Editor."
 
         return embed
 
@@ -167,7 +171,7 @@ def button_edit_heading_embed(message: discord.Message):
                          "In the __Button Manager__ view (this view):\n" \
                          "✗ Cancel\n+ Add button\n✔ Confirm previewed buttons and add to message\n\n" \
                          "In the __Button Edit__ view (click on any button):\n" \
-                         "◀ / ▶ Previous/Next page\n✔ Commit button settings\n💥 Delete button\n\n" \
+                         "◀ / ▶ Previous/Next page\n💥 Delete button\n✅ Commit button settings\n🔀 Reposition button\n\n" \
                          "Once you have added a button, click on it at any time to edit it. When finished, " \
                          " use ✔ in the Button Manager view to change the message's buttons to those previewed.",
             color=EMBED_COLOUR_QU
