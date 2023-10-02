@@ -94,7 +94,7 @@ def check_channel_permissions(): # does this work? I have no idea. Discord seems
     return app_commands.check(checkuserperms)
 
 
-async def button_role_checks(interaction: discord.Interaction, role: discord.Role):
+async def button_role_checks(interaction: discord.Interaction, role: discord.Role, button_data: RoleButtonData):
     print(f"Called button_role_checks for {role}")
     try:
         # check if we have permission to manage this role
@@ -102,7 +102,7 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
         if bot_member.top_role <= role or role.managed:
             print("We don't have permission for this role")
             try:
-                raise CustomError(f"I don't have permission to manage <@&{role.id}>.")
+                raise CustomError(f"I don't have permission to manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** .")
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
             return False
@@ -116,7 +116,8 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
             if not permission:
                 print("User doesn't have permission to manage this role.")
                 try:
-                    error = f'To manage <@&{role.id}> you require one of the following roles: <@&{role_mod()}>  •  <@&{role_council()}>'
+                    error = f'To manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** ' \
+                            f'you require one of the following roles: <@&{role_mod()}>  •  <@&{role_council()}>'
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
