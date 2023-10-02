@@ -22,6 +22,7 @@ class RoleButtonData:
         self.role_object = info_dict.get('role_object', None)
         self.button_label = info_dict.get('button_label', DEFAULT_BUTTON_LABEL)
         self.button_emoji = info_dict.get('button_emoji', '👋')
+        self.button_row = info_dict.get('button_row', 0)
         self.unique_id = info_dict.get('unique_id', None)
         self.button_style = info_dict.get('button_style', discord.ButtonStyle.secondary)
         self.button_action = info_dict.get('button_action', 'toggle')
@@ -65,7 +66,8 @@ class RoleButtonData:
         :rtype: str
         """
         return 'RoleButtonData: message:{0.message} | role_id:{0.role_id} | ' \
-               'button_label:{0.button_label} | button_emoji:{0.button_emoji} | unique_id:{0.unique_id} | ' \
+               'button_label:{0.button_label} | button_emoji:{0.button_emoji} | ' \
+               'button_row:{0.button_row} | unique_id:{0.unique_id} | ' \
                'button_style:{0.button_style} | button_action:{0.button_action} | ' \
                'preview_message:{0.preview_message}'.format(self)
 
