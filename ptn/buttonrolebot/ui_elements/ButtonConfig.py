@@ -32,6 +32,75 @@ from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_butto
 
 spamchannel = bot.get_channel(channel_botspam())
 
+async def _reposition_button(interaction: discord.Interaction, buttons, button_data: RoleButtonData, action):
+    print(f'Called {_reposition_button.__name__} with action: {action}')
+    row = button_data.button_row
+    target_id = button_data.unique_id
+    current_index = None
+
+    try:
+        print("⏳ Searching for current button in buttons list...")
+        for i, button_data_instance in enumerate(buttons):
+            if button_data_instance.unique_id == target_id:
+                print(f"Found button {button_data_instance.unique_id}")
+                current_index = i
+                break
+
+        if action == 'left' or action == 'right':
+            # edit position in buttons list
+            if current_index > 0 and current_index < 19: # we only allow 20 buttons with Button Manager
+                button_to_move = buttons.pop(current_index)
+                if action == 'left':
+                    new_index = current_index - 1
+                else:
+                    new_index = current_index + 1
+                print("▶ Moving button in list")
+                buttons.insert(new_index, button_to_move)
+            print(buttons)
+
+        elif action == 'down' or action == 'up':
+            if action == 'down':
+                # edit row down within bounds
+                if row == 3:
+                    print("Button can't go further down, ignoring")
+                    embed = discord.Embed(
+                        description="⚠ Button already in ⏬ bottom row. Move other buttons 🔼 up if needed.",
+                        color=constants.EMBED_COLOUR_ERROR
+                    )
+                    embed.set_footer(text="You can dismiss this message.")
+                    return await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                    new_row = row + 1
+
+            elif  action == 'up':
+                # edit row up within bounds
+                if row == 0:
+                    print("Button can't go further up, ignoring")
+                    embed = discord.Embed(
+                        description="⚠ Button already in ⏫ top row. Move other buttons 🔽 down if needed.",
+                        color=constants.EMBED_COLOUR_ERROR
+                    )
+                    embed.set_footer(text="You can dismiss this message.")
+                    return await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                    new_row = row - 1
+
+            print(f"▶ Updating row from {row} to {new_row}")
+            button_data.button_row = new_row
+            buttons[current_index] = button_data
+
+        # update preview
+        await _update_preview(Interaction, buttons, button_data)
+
+        return
+    
+    except Exception as e:
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+
+
 async def _check_for_button_conflict(interaction: discord.Interaction, buttons: list, button_data: RoleButtonData):
     print(f"Called _check_for_button_conflict with  {button_data}")
     try:
@@ -175,7 +244,8 @@ class NewButton(Button):
             label=str(self.button_data.button_label) if self.button_data.button_label else None,
             emoji=self.emoji_value,
             style=self.button_data.button_style,
-            custom_id=self.button_data.unique_id
+            custom_id=self.button_data.unique_id,
+            row=self.button_data.button_row
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -243,6 +313,9 @@ def _select_view_from_index(index, buttons, button_data: RoleButtonData):
     elif index == 4:
         print("Assigning 4: LabelEmojiView")
         view = LabelEmojiView(buttons, button_data)
+    elif index == 5:
+        print("Assigning 5: RepositionButtonView")
+        view = RepositionButtonView(buttons, button_data)
     return view
 
 
@@ -614,6 +687,46 @@ class CommitButton(Button):
             except Exception as e:
                 print(e)
 
+class CallRepositionButton(Button):
+    def __init__(self, index, buttons, button_data: RoleButtonData):
+        self.index = index
+        self.buttons = buttons
+        self.button_data: RoleButtonData = button_data
+        super().__init__(
+            emoji='🔀',
+            style=discord.ButtonStyle.primary,
+            custom_id="generic_reposition_button",
+            row=1
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        print("Received 🔀 generic_reposition_button click")
+        # generate new embed
+        embed = button_config_embed(5, self.button_data)
+        # assign new view
+        view = RepositionButtonView(self.index, self.buttons, self.button_data)
+        await interaction.response.edit_message(embed=embed, view=view)
+
+class CallEditButton(Button):
+    def __init__(self, index, buttons, button_data: RoleButtonData):
+        self.index = index
+        self.buttons = buttons
+        self.button_data: RoleButtonData = button_data
+        super().__init__(
+            emoji='⚙',
+            style=discord.ButtonStyle.primary,
+            custom_id="generic_editor_button",
+            row=1
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        print("Received ⚙ generic_editor_button click")
+        # generate new embed
+        embed = button_config_embed(self.index, self.button_data)
+        # assign new view
+        view = _select_view_from_index(self.index, self.buttons, self.button_data)
+        await interaction.response.edit_message(embed=embed, view=view)
+
 """
 INDEXED VIEWS
 
@@ -629,11 +742,10 @@ class ChooseRoleView(View):
         self.buttons = buttons
         self.button_data = button_data
         self.index = 0
-        self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
         self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
-        self.add_item(self.button_enter_role_id)
         self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -660,11 +772,10 @@ class ConfirmRoleView(View):
         super().__init__(timeout=None)
         self.button_data = button_data
         self.index = 1
-        self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
         self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
-        self.add_item(self.confirm_role_button)
         self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -695,6 +806,7 @@ class ButtonActionView(View):
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
         self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
         self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -790,6 +902,7 @@ class ButtonStyleView(View):
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
         self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
         self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -886,11 +999,10 @@ class LabelEmojiView(View):
         super().__init__(timeout=None)
         self.button_data = button_data
         self.index = 4
-        self.clear_items()
         self.add_item(PrevButton(self.index, self.buttons, self.button_data))
         self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
-        self.add_item(self.label_emoji_button)
         self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
@@ -905,6 +1017,77 @@ class LabelEmojiView(View):
 
         await interaction.response.send_modal(EnterLabelEmojiModal(self.buttons, self.button_data))
 
+
+"""
+Reposition Page (index = 6)
+"""
+class RepositionButtonView(View):
+    def __init__(self, index, buttons, button_data: RoleButtonData):
+        self.buttons = buttons
+        super().__init__(timeout=None)
+        self.button_data = button_data
+        self.index = index
+        self.add_item(PrevButton(self.index, self.buttons, self.button_data))
+        self.add_item(DeleteButton(self.index, self.buttons, self.button_data))
+        self.add_item(CommitButton(self.index, self.button_data))
+        self.add_item(CallEditButton(self.index, self.buttons, self.button_data))
+        self.add_item(NextButton(self.index, self.buttons, self.button_data))
+
+    @discord.ui.button(
+        custom_id='move_left_button',
+        style=discord.ButtonStyle.primary,
+        emoji='◀',
+        row=0
+    )
+    async def move_left_button(self, interaction: discord.Interaction, button):
+        print(f"🔘 Received move_left_button click")
+
+        action = 'left'
+
+        await _reposition_button(interaction, self.buttons, self.button_data, action)
+        await interaction.response.defer()
+
+    @discord.ui.button(
+        custom_id='move_right_button',
+        style=discord.ButtonStyle.primary,
+        emoji='▶',
+        row=0
+    )
+    async def move_right_button(self, interaction: discord.Interaction, button):
+        print(f"🔘 Received move_right_button click")
+
+        action = 'right'
+
+        await _reposition_button(interaction, self.buttons, self.button_data, action)
+        await interaction.response.defer()
+
+    @discord.ui.button(
+        custom_id='move_up_button',
+        style=discord.ButtonStyle.primary,
+        emoji='🔼',
+        row=0
+    )
+    async def move_up_button(self, interaction: discord.Interaction, button):
+        print(f"🔘 Received move_up_button click")
+
+        action = 'up'
+
+        await _reposition_button(interaction, self.buttons, self.button_data, action)
+        await interaction.response.defer()
+
+    @discord.ui.button(
+        custom_id='move_down_button',
+        style=discord.ButtonStyle.primary,
+        emoji='🔽',
+        row=0
+    )
+    async def move_down_button(self, interaction: discord.Interaction, button):
+        print(f"🔘 Received move_down_button click")
+
+        action = 'down'
+
+        await _reposition_button(interaction, self.buttons, self.button_data, action)
+        await interaction.response.defer()
 
 """
 After buttons sent view
@@ -1096,14 +1279,10 @@ class EnterLabelEmojiModal(Modal):
         if self.button_data.button_emoji:
             print("✅ Bot thinks we have an emoji")
 
-        # update preview then 'close' this interface by deleting message
+        # update preview
         await _update_preview(interaction, self.buttons, self.button_data)
 
-        await interaction.response.defer()
-
-        try:
-            await interaction.delete_original_response()
-        except Exception as e:
-            print(e)
-
+        # page view forward
+        embed, view = _increment_index(self.index, self.buttons, self.button_data)
+        await interaction.response.edit_message(embed=embed, view=view)
 

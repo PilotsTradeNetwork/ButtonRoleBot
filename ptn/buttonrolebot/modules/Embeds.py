@@ -65,9 +65,9 @@ def button_config_embed(index, button_data: RoleButtonData):
     message: discord.Message = button_data.message
 
     if index < 6:
-        footer = f"Step {index + 1} of 5"
+        footer = f"Step {index + 1} of 5. Use 🔀 to reposition button."
     else:
-        footer = "All done!"
+        footer = "Use ⚙ to return to Button Editor"
 
     embed = discord.Embed(color=EMBED_COLOUR_QU)
 
@@ -122,6 +122,14 @@ def button_config_embed(index, button_data: RoleButtonData):
             'the emoji in a message, and putting a backslash `\` in front of it before sending.\n' \
             '- Default emojis can be entered using an emoji keyboard (Windows: `Win`+`.`) '\
             'or copy/pasting from a sent Discord message.'
+
+        return embed
+
+    elif index == 5:
+        print("Returning embed for index 5")
+        # embed.title="LABEL & EMOJI"
+        embed.description = \
+            f':six: :twisted_rightwards_arrows: **REPOSITION your button** (optional).\n\n'
 
         return embed
 
