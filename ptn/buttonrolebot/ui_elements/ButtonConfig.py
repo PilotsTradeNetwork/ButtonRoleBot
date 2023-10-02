@@ -780,14 +780,14 @@ class CallEditButton(Button):
         self.buttons = buttons
         self.button_data: RoleButtonData = button_data
         super().__init__(
-            emoji='🔙',
+            emoji='↩️',
             style=discord.ButtonStyle.primary,
             custom_id="generic_editor_button",
             row=1
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print("Received 🔙 generic_editor_button click")
+        print("Received ↩️ generic_editor_button click")
         # generate new embed
         embed = button_config_embed(self.index, self.button_data)
         # assign new view
