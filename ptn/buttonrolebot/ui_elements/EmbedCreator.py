@@ -6,8 +6,6 @@ Depends on: constants, Embeds, ErrorHandler, Helpers
 """
 # import libraries
 import re
-from discord.interactions import Interaction
-import validators
 
 # import discord.py
 import discord
@@ -18,7 +16,7 @@ from ptn.buttonrolebot.bot import bot
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam, EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
@@ -67,9 +65,17 @@ class EmbedGenButtons(View):
         self.action = action
         self.message: discord.Message = message
         self.spamchannel: discord.TextChannel = bot.get_channel(channel_botspam())
-        super().__init__(timeout=None)
         self.instruction_embed: discord.Embed = instruction_embed # our original embed
         self.embed_data: EmbedData = embed_data # an instance of EmbedData to send to our embed creators
+        super().__init__(timeout=None)
+        self.set_embed_author_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_name else discord.ButtonStyle.secondary
+        self.set_embed_avatar_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_avatar_url else discord.ButtonStyle.secondary
+        self.set_embed_color_button.style=discord.ButtonStyle.success if int(self.embed_data.embed_color) != EMBED_COLOUR_PTN_DEFAULT else discord.ButtonStyle.secondary
+        self.set_embed_desc_button.style=discord.ButtonStyle.success if self.embed_data.embed_description != DEFAULT_EMBED_DESC else discord.ButtonStyle.primary
+        self.set_embed_footer_button.style=discord.ButtonStyle.success if self.embed_data.embed_footer else discord.ButtonStyle.secondary
+        self.set_embed_img_button.style=discord.ButtonStyle.success if self.embed_data.embed_image_url else discord.ButtonStyle.secondary
+        self.set_embed_thumb_button.style=discord.ButtonStyle.success if self.embed_data.embed_thumbnail_url else discord.ButtonStyle.secondary
+        self.set_embed_title_button.style=discord.ButtonStyle.success if self.embed_data.embed_title else discord.ButtonStyle.secondary
         # self.remove_item(self.set_embed_send_button) # remove the send button until we have something to send
 
 
@@ -398,19 +404,23 @@ class EmbedContentModal(Modal):
                 print(self.embed_data.embed_color)
 
         else: # i.e. if anything other than color is being set
-            print('Checking if URL type')
-            string_to_check = str(self.field_data.attr)
-            if "url" in string_to_check:
-                print('Validating URLs')
-                # validate image URLs
-                if not is_valid_extension(self.embed_field.value) and self.embed_field.value is not None:
-                    error = f"Image not valid: {self.embed_field.value}"
-                    print(error)
-                    try:
-                        raise CustomError(error)
-                    except Exception as e:
-                        await on_generic_error(self.spamchannel, interaction, e)
-                    return
+            if self.embed_field.value == "":
+                print("User left this field blank.")
+                self.embed_data.set_attribute(self.field_data.attr, None)
+            else:
+                print('Checking if URL type')
+                string_to_check = str(self.field_data.attr)
+                if "url" in string_to_check:
+                    print('Validating URLs')
+                    # validate image URLs
+                    if not is_valid_extension(self.embed_field.value) and self.embed_field.value is not None:
+                        error = f"Image not valid: {self.embed_field.value}"
+                        print(error)
+                        try:
+                            raise CustomError(error)
+                        except Exception as e:
+                            await on_generic_error(self.spamchannel, interaction, e)
+                        return
 
             print('Updating embed_data')
             # define our embed_data attribute to the user-inputted value
@@ -429,9 +439,11 @@ class EmbedContentModal(Modal):
         embeds = [self.instruction_embed, preview_embed]
 
         # update button style
+        print("Updating button style...")
         if self.embed_field.value:
-            print("Updating button style...")
             self.button.style = discord.ButtonStyle.success
+        else:
+            self.button.style = discord.ButtonStyle.secondary
 
         # update the view in case we added the send button
         print("Sending updated embeds")

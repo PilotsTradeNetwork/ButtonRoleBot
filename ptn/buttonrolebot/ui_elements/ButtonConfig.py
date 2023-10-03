@@ -66,17 +66,26 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
                 current_index = i
                 break
 
-        if action == 'left' or action == 'right':
-            # edit position in buttons list
-            if current_index > 0 and current_index < 19: # we only allow 20 buttons with Button Manager
-                button_to_move = buttons.pop(current_index)
-                if action == 'left':
-                    new_index = current_index - 1
-                else:
-                    new_index = current_index + 1
-                print("▶ Moving button in list")
-                buttons.insert(new_index, button_to_move)
+        def move_button(new_index, button_to_move):
+            print("▶ Moving button in list")
+            button_to_move = buttons.pop(current_index)
+            buttons.insert(new_index, button_to_move)
             print(buttons)
+
+        if action == 'left' or action == 'right':
+            print("Horizontal movement")
+            # edit position in buttons list
+            
+            if action == 'left' and current_index >= 1:
+                new_index = current_index - 1
+                move_button(new_index, current_index)
+            elif action == 'right' and current_index <=18: # 19 is the max (20 items including 0)
+                new_index = current_index + 1
+                move_button(new_index, current_index)
+            else:
+                print(f"Button in position {current_index} cannot be moved {action}")
+                return
+
 
         elif action == 'down' or action == 'up':
             if action == 'down':
