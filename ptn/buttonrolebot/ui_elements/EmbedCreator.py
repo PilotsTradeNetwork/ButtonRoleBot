@@ -16,7 +16,7 @@ from ptn.buttonrolebot.bot import bot
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.constants import channel_botspam, EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
 
 # import local classes
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
@@ -70,8 +70,8 @@ class EmbedGenButtons(View):
         super().__init__(timeout=None)
         self.set_embed_author_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_name else discord.ButtonStyle.secondary
         self.set_embed_avatar_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_avatar_url else discord.ButtonStyle.secondary
-        self.set_embed_color_button.style=discord.ButtonStyle.success if self.embed_data.embed_color else discord.ButtonStyle.secondary
-        self.set_embed_desc_button.style=discord.ButtonStyle.success if self.embed_data.embed_description else discord.ButtonStyle.primary
+        self.set_embed_color_button.style=discord.ButtonStyle.success if int(self.embed_data.embed_color) != EMBED_COLOUR_PTN_DEFAULT else discord.ButtonStyle.secondary
+        self.set_embed_desc_button.style=discord.ButtonStyle.success if self.embed_data.embed_description != DEFAULT_EMBED_DESC else discord.ButtonStyle.primary
         self.set_embed_footer_button.style=discord.ButtonStyle.success if self.embed_data.embed_footer else discord.ButtonStyle.secondary
         self.set_embed_img_button.style=discord.ButtonStyle.success if self.embed_data.embed_image_url else discord.ButtonStyle.secondary
         self.set_embed_thumb_button.style=discord.ButtonStyle.success if self.embed_data.embed_thumbnail_url else discord.ButtonStyle.secondary
