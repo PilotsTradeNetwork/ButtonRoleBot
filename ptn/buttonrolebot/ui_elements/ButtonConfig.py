@@ -5,6 +5,7 @@ A set of discord.ui elements for customising buttons added by BRB.
 # import libraries
 import emoji
 import random
+import re
 import traceback
 import uuid
 
@@ -1217,13 +1218,17 @@ class EnterRoleIDModal(Modal):
         label='Enter Role ID',
         placeholder='e.g. 800091021852803072',
         required=True,
-        max_length=20
+        max_length=24
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        # check user has entered an INT
+        # remove anything that isn't a number
+        str_role_id = self.role_id.value
+        int_role_id = re.sub(r'[^0-9]', '', str_role_id)
+
+        # try to convert to int
         try:
-            self.button_data.role_id = int(self.role_id.value)
+            self.button_data.role_id = int(int_role_id)
             print(f'Stored Role ID: {self.button_data.role_id}')
         except ValueError as e:
             try:
@@ -1236,15 +1241,9 @@ class EnterRoleIDModal(Modal):
         role: discord.Role = None
         print(f'Role is {role}')
         role = await check_role_exists(interaction, self.button_data.role_id)
+        if role == None: return # stop here if there's no valid role
 
-        if role == None: 
-            try:
-                raise CustomError(f"Can't find a role with ID `{self.button_data.role_id}`.")
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
-        else:
-            self.button_data.role_object = role
+        self.button_data.role_object = role
 
         # check if we have permission to manage this role
         permission = await button_role_checks(interaction, role, self.button_data)
