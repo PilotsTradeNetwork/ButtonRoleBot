@@ -7,6 +7,7 @@ Dependencies: Constants, Metadata
 
 """
 # import libraries
+import asyncio
 import re
 
 # import discord
@@ -16,7 +17,7 @@ from discord.ext import commands
 
 # import constants
 from ptn.buttonrolebot._metadata import __version__
-from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK, role_council, role_mod, EMBED_COLOUR_ERROR
+from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_COLOUR_OK, role_council, role_mod, EMBED_COLOUR_ERROR, EMBED_COLOUR_QU
 
 # import classes
 # from ptn.buttonrolebot.ui_elements.ButtonCreator import DynamicButton
@@ -61,112 +62,147 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
         print("DynamicButton: callback from:")
         print(f'action:{self.action}:message:{self.message_id}:role:{self.role_id}')
 
-        print(f"Spamchannel is {spamchannel}")
+        embed = discord.Embed(
+            description="⏳ Processing...",
+            color=EMBED_COLOUR_QU
+        )
 
-        try:
-            # get role object
-            role = discord.utils.get(interaction.guild.roles, id=self.role_id)
+        # quickly send off a message so we don't miss our 3 second response window
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
-            # check if we have permissions for this role
-            bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
-            if bot_member.top_role <= role or role.managed:
-                print(f"⚠ We don't have permission for {role}")
+        timeout = 30 # timeout in seconds for administering role
+
+        async def manage_user_role():
+            try:
+                print(f"Spamchannel is {spamchannel}")
+
+                # get role object
+                role = discord.utils.get(interaction.guild.roles, id=self.role_id)
+
+                # check if we have permissions for this role
+                bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+                if bot_member.top_role <= role or role.managed:
+                    print(f"⚠ We don't have permission for {role}")
+                    try:
+                        # notify bot-spam
+                        message: discord.Message = await interaction.channel.fetch_message(self.message_id)
+                        embed = discord.Embed(
+                            description=f':warning: <@{bot_member.id}> does not have permission to manage <@&{role.id}>. Called from {message.jump_url}.\n\n'
+                                        'Bot role is not high enough in role hierarchy to grant this role. **Please move the bot role higher or edit the offending button**.',
+                            color=EMBED_COLOUR_ERROR
+                        )
+                        content = f'🔔 <@&{role_mod()}>: Button failed to grant role <@&{role.id}>'
+                        await spamchannel.send(content=content, embed=embed)
+                    except Exception as e:
+                        print(f'Error notifying bot-spam: {e}')
+
+                    try:
+                        # notify user
+                        raise CustomError(f"Sorry, I don't have permission to manage <@&{role.id}>. Please contact a <@&{role_mod()}> or <@&{role_council()}> member.")
+                    except Exception as e:
+                        await on_generic_error(spamchannel, interaction, e)
+                    return False
+
+                # check if user has it
+                print(f'Check whether user has role: "{role}"')
+                
+                if role not in interaction.user.roles and self.action != 'take':
+                    print('User doesn\'t have role and action is not take')
+                    # rolercoaster giveth
+                    await interaction.user.add_roles(role)
+                    print(f'➕ Gave {interaction.user} the {role} role')
+                    adverb = "now"
+
+                elif role in interaction.user.roles and self.action != 'give':
+                    print('User has role and action is not give')
+                    # ...and rolercoaster taketh away
+                    await interaction.user.remove_roles(role)
+                    print(f'➖ Removed {interaction.user} from the {role} role')
+                    adverb = "no longer"
+
+                elif role not in interaction.user.roles and self.action == 'take':
+                    print('No action required: user hasn\'t got role and action is take')
+                    adverb = 'don\'t'
+
+                elif role in interaction.user.roles and self.action == 'give':
+                    print('No action required: user already has role and action is give')
+                    adverb = 'already'
+
+                embed = discord.Embed(
+                    description=f'You {adverb} have the <@&{role.id}> role.',
+                    color=EMBED_COLOUR_OK
+                )
+
+                await interaction.edit_original_response(embed=embed)
+
+            except Forbidden as e:
+                print(e)
                 try:
                     # notify bot-spam
                     message: discord.Message = await interaction.channel.fetch_message(self.message_id)
                     embed = discord.Embed(
-                        description=f':warning: <@{bot_member.id}> does not have permission to manage <@&{role.id}>. Called from {message.jump_url}.\n\n'
-                                    'Bot role is not high enough in role hierarchy to grant this role. **Please move the bot role higher or edit the offending button**.',
+                        description=f':warning: <@{bot_member.id}> does not have permission to manage <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. **Bot role needs Manage Roles permission**.',
                         color=EMBED_COLOUR_ERROR
                     )
-                    content = f'🔔 <@&{role_mod()}>: Button failed to grant role <@&{role.id}>'
-                    await spamchannel.send(content=content, embed=embed)
+                    embed.set_footer(text=e)
+                    await spamchannel.send(embed=embed)
                 except Exception as e:
                     print(f'Error notifying bot-spam: {e}')
 
+                print("Raising error for user")
+                # raise error
                 try:
-                    # notify user
-                    raise CustomError(f"Sorry, I don't have permission to manage <@&{role.id}>. Please contact a <@&{role_mod()}> or <@&{role_council()}> member.")
+                    error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
+                    raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
-                return False
+                return 
 
-            # check if user has it
-            print(f'Check whether user has role: "{role}"')
-            
-            if role not in interaction.user.roles and self.action != 'take':
-                print('User doesn\'t have role and action is not take')
-                # rolercoaster giveth
-                await interaction.user.add_roles(role)
-                print(f'➕ Gave {interaction.user} the {role} role')
-                adverb = "now"
+            except Exception as e:
+                print(e)
+                try:
+                    # notify bot-spam
+                    message: discord.Message = await interaction.channel.fetch_message(self.message_id)
+                    embed = discord.Embed(
+                        description=f':warning: <@{bot_member.id}> failed administering <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. Error given:\n{e}',
+                        color=EMBED_COLOUR_ERROR
+                    )
+                    await spamchannel.send(embed=embed)
+                except Exception as e:
+                    print(f'Error notifying bot-spam: {e}')
 
-            elif role in interaction.user.roles and self.action != 'give':
-                print('User has role and action is not give')
-                # ...and rolercoaster taketh away
-                await interaction.user.remove_roles(role)
-                print(f'➖ Removed {interaction.user} from the {role} role')
-                adverb = "no longer"
+                print("Raising error for user")
+                # raise error
+                try:
+                    error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return
 
-            elif role not in interaction.user.roles and self.action == 'take':
-                print('No action required: user hasn\'t got role and action is take')
-                adverb = 'don\'t'
+        try:
+            await asyncio.wait_for(manage_user_role(), timeout=timeout)
 
-            elif role in interaction.user.roles and self.action == 'give':
-                print('No action required: user already has role and action is give')
-                adverb = 'already'
+        except asyncio.TimeoutError: # TODO move to error handler
+            print("User role management timed out")
+            # notify user
+            embed = discord.Embed(
+                description=f"❌ Timed out. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance.",
+                color=EMBED_COLOUR_ERROR
+            )
+            await interaction.edit_original_response(embed=embed)
+
+            # notify bot-spam
+            message: discord.Message = await interaction.channel.fetch_message(self.message_id)
 
             embed = discord.Embed(
-                description=f'You {adverb} have the <@&{role.id}> role.',
-                color=EMBED_COLOUR_OK
+                description=f':warning: <@{bot.user.id}> **timed out** ({timeout}) while trying to {self.action} <@&{self.role_id}> for <@{interaction.user.id}>. Called from {message.jump_url}.',
+                color=EMBED_COLOUR_ERROR
             )
-
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        except Forbidden as e:
-            print(e)
-            try:
-                # notify bot-spam
-                message: discord.Message = await interaction.channel.fetch_message(self.message_id)
-                embed = discord.Embed(
-                    description=f':warning: <@{bot_member.id}> does not have permission to grant <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. **Bot role needs Manage Roles permission**.',
-                    color=EMBED_COLOUR_ERROR
-                )
-                embed.set_footer(text=e)
-                await spamchannel.send(embed=embed)
-            except Exception as e:
-                print(f'Error notifying bot-spam: {e}')
-
-            print("Raising error for user")
-            # raise error
-            try:
-                error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
-                raise CustomError(error)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return 
+            await spamchannel.send(embed=embed)
 
         except Exception as e:
             print(e)
-            try:
-                # notify bot-spam
-                message: discord.Message = await interaction.channel.fetch_message(self.message_id)
-                embed = discord.Embed(
-                    description=f':warning: <@{bot_member.id}> failed administering <@&{role.id}> for <@{interaction.user.id}>. Called from {message.jump_url}. Error given:\n{e}',
-                    color=EMBED_COLOUR_ERROR
-                )
-                await spamchannel.send(embed=embed)
-            except Exception as e:
-                print(f'Error notifying bot-spam: {e}')
-
-            print("Raising error for user")
-            # raise error
-            try:
-                error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
-                raise CustomError(error)
-            except Exception as e:
-                await on_generic_error(spamchannel, interaction, e)
-            return
 
 
 """
