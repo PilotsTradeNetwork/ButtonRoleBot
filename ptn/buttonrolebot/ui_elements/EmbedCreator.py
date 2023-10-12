@@ -6,6 +6,7 @@ Depends on: constants, Embeds, ErrorHandler, Helpers
 """
 # import libraries
 import re
+import traceback
 
 # import discord.py
 import discord
@@ -25,7 +26,39 @@ from ptn.buttonrolebot.classes.FieldData import FieldData
 # import local modules
 from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension
+from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension, _get_embed_from_message
+
+
+# function shared by Edit Bot Embed and /edit_embed to edit an embed sent by the bot
+async def _edit_bot_embed(interaction: discord.Interaction, message: discord.Message):
+    print("Called _edit_bot_embed")
+    spamchannel = bot.get_channel(channel_botspam())
+    try:
+        instruction_embed = discord.Embed(
+            title='⚙ EDITING EMBED',
+            color=constants.EMBED_COLOUR_QU
+        )
+
+        # get the embed from the message
+        embed_data = _get_embed_from_message(message)
+
+        preview_embed = _generate_embed_from_dict(embed_data)
+
+        view = EmbedGenButtons(instruction_embed, embed_data, message, 'edit')
+
+        embeds = [instruction_embed, preview_embed]
+
+        await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
+
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        try:
+            raise GenericError(e)
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
+
 
 """
 EMBED CREATOR

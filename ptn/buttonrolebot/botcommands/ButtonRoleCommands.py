@@ -11,7 +11,7 @@ import uuid
 # discord.py
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, NotFound
 from discord.ui import View
 
 # bot object
@@ -27,7 +27,7 @@ from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # local views
-from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons
+from ptn.buttonrolebot.ui_elements.EmbedCreator import EmbedGenButtons, _edit_bot_embed
 from ptn.buttonrolebot.ui_elements.ButtonConfig import MasterCancelButton, MasterAddButton, MasterCommitButton, NewButton
 from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 
@@ -226,30 +226,11 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
 @check_channel_permissions()
 async def edit_bot_embed(interaction: discord.Interaction, message: discord.Message):
     print(f"Received Edit Bot Embed context interaction from {interaction.user} in {interaction.channel}")
-    # check message was sent by bot
-    if not message.author == bot.user:
-        try:
-            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
-        except Exception as e:
-            await on_generic_error(spamchannel, interaction, e)
-        return
-    
+
     try:
-        instruction_embed = discord.Embed(
-            title='⚙ EDITING EMBED',
-            color=constants.EMBED_COLOUR_QU
-        )
 
-        # get the embed from the message
-        embed_data = _get_embed_from_message(message)
+        await _edit_bot_embed(interaction, message)
 
-        preview_embed = _generate_embed_from_dict(embed_data)
-
-        view = EmbedGenButtons(instruction_embed, embed_data, message, 'edit')
-
-        embeds = [instruction_embed, preview_embed]
-
-        await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
     except Exception as e:
         print(e)
         traceback.print_exc()
@@ -257,6 +238,15 @@ async def edit_bot_embed(interaction: discord.Interaction, message: discord.Mess
             raise GenericError(e)
         except Exception as e:
             await on_generic_error(spamchannel, interaction, e)
+
+    # check message was sent by bot
+    if not message.author == bot.user:
+        try:
+            raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
+        except Exception as e:
+            await on_generic_error(spamchannel, interaction, e)
+        return
+
 
 """
 BRB COMMANDS COG
@@ -317,3 +307,51 @@ class ButtonRoleCommands(commands.Cog):
         await interaction.response.send_message(embeds=embeds, view=view, ephemeral=True)
 
 
+    # edit an embed sent by this bot - alias for Edit Bot Embed
+    @app_commands.command(
+        name="edit_embed",
+        description="Edit an Embed sent by this bot."
+        )
+    @app_commands.describe(
+        message_id='The developer ID or Discord URL of the target message.'
+    )
+    @check_roles(any_elevated_role)
+    @check_channel_permissions()
+    async def _send_embed(self, interaction:  discord.Interaction, message_id: str):
+        print(f"{interaction.user.name} used /edit_embed in {interaction.channel.name}")
+        try:
+            if 'discord' in message_id:
+                # we got a jumpurl. attempt to isolate the message ID
+                url_parts = message_id.split('/')
+                last_part = url_parts[-1]
+                message_id = int(last_part)
+                print(f"Message ID: {message_id}")
+            else:
+                # try to convert it to an int
+                message_id = int(message_id)
+                print(f"Message ID: {message_id}")
+
+            # try to fetch a discord message object
+            try:
+                message = await interaction.channel.fetch_message(message_id)
+            except NotFound as e:
+                error = f"**Unable to find a message with the ID `{message_id}` in this channel**." \
+                        f" Please make sure you use this command in the same channel as the target message."
+                try:
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return
+
+            else:
+                print(f"Fetched message object {message}")
+
+        except Exception as e:
+            error = f"**Could not process input into a message**: ```{e}```"
+            try:
+                raise CustomError(error)
+            except Exception as e:
+                await on_generic_error(spamchannel, interaction, e)
+            return
+
+        await _edit_bot_embed(interaction, message)
