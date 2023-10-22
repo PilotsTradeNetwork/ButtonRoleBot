@@ -317,7 +317,7 @@ class ButtonRoleCommands(commands.Cog):
     )
     @check_roles(any_elevated_role)
     @check_channel_permissions()
-    async def _send_embed(self, interaction:  discord.Interaction, message_id: str):
+    async def _edit_embed(self, interaction:  discord.Interaction, message_id: str):
         print(f"{interaction.user.name} used /edit_embed in {interaction.channel.name}")
         try:
             if 'discord' in message_id:
