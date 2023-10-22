@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+- [#104](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/104) Fixed `/send_embed` not registering on server
+
 
 ## 1.0.2
 - [#102](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/102) Add slash command `/edit_embed` as alternative access to `Edit Bot Embed` function. Takes message ID or URL as an argument.
