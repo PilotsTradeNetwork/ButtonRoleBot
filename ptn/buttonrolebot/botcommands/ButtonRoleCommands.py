@@ -4,6 +4,7 @@ Our main Cog for BRB commands.
 """
 
 # libraries
+import json
 import re
 import traceback
 import uuid
@@ -20,7 +21,7 @@ from ptn.buttonrolebot.bot import bot
 # local constants
 from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, channel_botdev, role_council, role_mod, any_elevated_role
+from ptn.buttonrolebot.constants import channel_botspam, role_council, role_mod, any_elevated_role
 
 # local classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
@@ -34,7 +35,7 @@ from ptn.buttonrolebot.ui_elements.ButtonRemove import ConfirmRemoveButtonsView
 # local modules
 from ptn.buttonrolebot.modules.ErrorHandler import on_app_command_error, GenericError, on_generic_error, CustomError
 from ptn.buttonrolebot.modules.Embeds import _generate_embed_from_dict, button_edit_heading_embed
-from ptn.buttonrolebot.modules.Helpers import check_roles, check_channel_permissions, _get_embed_from_message
+from ptn.buttonrolebot.modules.Helpers import check_roles, check_channel_permissions, _get_embed_from_message, _format_embed_dict
 
 spamchannel = bot.get_channel(channel_botspam())
 
@@ -123,7 +124,7 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
         # get the embed from the message
         embed_data = _get_embed_from_message(message)
 
-        preview_embed = _generate_embed_from_dict(embed_data)
+        preview_embed = await _generate_embed_from_dict(embed_data)
 
         embeds = [heading_embed, preview_embed]
 
@@ -299,6 +300,9 @@ class ButtonRoleCommands(commands.Cog):
             description=embed_data.embed_description,
             color=embed_data.embed_color
         )
+
+        # define the embed json
+        embed_data.embed_json = _format_embed_dict(preview_embed)
 
         view = EmbedGenButtons(instruction_embed, embed_data, None, 'create')
 
