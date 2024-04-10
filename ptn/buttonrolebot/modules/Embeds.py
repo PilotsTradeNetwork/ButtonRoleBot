@@ -8,56 +8,123 @@ Dependencies: constants
 Error Handling should be dealt with from calling functions
 """
 # import libraries
+import json
 import random
 
 # import discord
 import discord
 
 # import constants
-from ptn.buttonrolebot.constants import EMBED_COLOUR_ERROR, EMBED_COLOUR_OK, EMBED_COLOUR_QU, channel_botspam, \
-    HOORAY_GIFS, BUTTON_CHOOSE_THUMBNAIL, BUTTON_SWEAT_THUMBNAIL, THERE_THERE, STRESS_GIFS, YOU_GO_GIRL, AMAZING_GIFS
+from ptn.buttonrolebot.constants import EMBED_COLOUR_OK, EMBED_COLOUR_QU, \
+    BUTTON_CHOOSE_THUMBNAIL, BUTTON_SWEAT_THUMBNAIL, THERE_THERE, STRESS_GIFS, YOU_GO_GIRL, AMAZING_GIFS
 
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 
+# convert hex color to int
+async def _color_hex_to_int(color_input):
+    print(color_input)
+    if type(color_input) != int:
+        color_input = str(color_input)
+        if color_input.startswith('#'): # check if we have an HTML color code
+            print(f"Received web color code with #: {color_input}, stripping leading #...")
+            color_input = color_input.lstrip('#')
+            print(f"New value: {color_input}")
+
+        color_int = int(color_input, 16)  # Convert hex string to integer
+        print(f'Converted {color_input} to {color_int}')
+
+        return color_int
+
+    else:
+        print("Received int, passing value through: %s" % (color_input))
+        return color_input
+
+
 # generate an embed from a dict
-def _generate_embed_from_dict(embed_data: EmbedData):
+async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
     print("Called _generate_embed_from_dict")
     print(embed_data)
 
-    # create empty embed
-    embed = discord.Embed()
-
-
     # Populate the embed with values from embed_data
-    print("Add title")
-    if embed_data.embed_title:
-        embed.title = embed_data.embed_title
-    print("Add description")
-    if embed_data.embed_description:
-        embed.description = embed_data.embed_description
-    print("Add footer")
-    if embed_data.embed_footer:
-        embed.set_footer(text=embed_data.embed_footer)
-    print("Add image")
-    if embed_data.embed_image_url:
-        embed.set_image(url=embed_data.embed_image_url)
-    print("Add thumbnail")
-    if embed_data.embed_thumbnail_url:
-        embed.set_thumbnail(url=embed_data.embed_thumbnail_url)
-    print("Add author")
-    if embed_data.embed_author_name:
-        print("Add author avatar")
-        if embed_data.embed_author_avatar_url:
-            embed.set_author(name=embed_data.embed_author_name, icon_url=embed_data.embed_author_avatar_url)
+
+    # load JSON
+    # convert str to dict if needed
+    if type(embed_data.embed_json) == str:
+        print("Received JSON in string format.")
+        # embed_data.embed_json = embed_data.embed_json.replace('\'', '\"')
+        embed_json: dict = json.loads(embed_data.embed_json)
+    else:
+        embed_json: dict = embed_data.embed_json
+
+    print('embed_json type: %s' % (type(embed_json)))
+
+    if not from_json:
+        print("▶ Add title")
+        if embed_data.embed_title:
+            embed_json["title"] = embed_data.embed_title
         else:
-            embed.set_author(name=embed_data.embed_author_name)
-    print("Set color")
-    if embed_data.embed_color:
-        embed.color = embed_data.embed_color
+            if "title" in embed_json: del embed_json["title"]
+
+        print("▶ Add description")
+        if embed_data.embed_description:
+            embed_json["description"] = embed_data.embed_description
+
+        print("▶ Add footer")
+        footer_dict = embed_json.get("footer", {})
+        if embed_data.embed_footer:
+            footer_dict["text"] = embed_data.embed_footer
+        else:
+            if "text" in footer_dict: del footer_dict["text"]
+        if footer_dict:
+            embed_json["footer"] = footer_dict
+
+        print("▶ Add image")
+        image_dict = embed_json.get("image", {})
+        if embed_data.embed_image_url:
+            image_dict["url"] = embed_data.embed_image_url
+        else:
+            if "url" in image_dict: del image_dict["url"]
+        if image_dict:
+            embed_json["image"] = image_dict
+
+        print("▶ Add thumbnail")
+        thumbnail_dict = embed_json.get("thumbnail", {})
+        if embed_data.embed_thumbnail_url:
+            thumbnail_dict["url"] = embed_data.embed_thumbnail_url
+        else:
+            if "url" in thumbnail_dict: del thumbnail_dict["url"]
+        if thumbnail_dict:
+            embed_json["thumbnail"] = thumbnail_dict
+
+        print("▶ Add author")
+        author_dict = embed_json.get("author", {})
+        if embed_data.embed_author_name:
+            author_dict["name"] = embed_data.embed_author_name
+            if embed_data.embed_author_avatar_url:
+                author_dict["icon_url"] = embed_data.embed_author_avatar_url
+            else:
+                if "icon_url" in author_dict: del author_dict["icon_url"]
+        else:
+            if "name" in author_dict: del author_dict["name"]
+        if author_dict:
+            embed_json["author"] = author_dict
+
+        print("▶ Set color")
+        if embed_data.embed_color:
+            color = await _color_hex_to_int(embed_data.embed_color)
+            embed_json["color"] = color
+        else:
+            if "color" in embed_json: del embed_json["color"]
+
+        print("✅ Finished updating dict.")
 
 
+    print("⌛ Populating embed from JSON")
+    embed = discord.Embed.from_dict(embed_json)
+
+    print("✅ Completed.")
     return embed
 
 def button_config_embed(index, button_data: RoleButtonData):
