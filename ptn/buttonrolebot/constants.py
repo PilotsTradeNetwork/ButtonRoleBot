@@ -124,6 +124,20 @@ YOU_GO_GIRL = [
     "Yeah!"
 ]
 
+# define preferred order of major embed fields for json/dict
+EMBED_DICT_SCHEMA = [
+    "color",
+    "author",
+    "title",
+    "url",
+    "description",
+    "fields",
+    "thumbnail",
+    "image",
+    "footer",
+    "timestamp"
+]
+
 # define constants based on prod or test environment
 def bot_guild():
   return PROD_DISCORD_GUILD if _production else TEST_DISCORD_GUILD
