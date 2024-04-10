@@ -5,6 +5,7 @@ Depends on: constants, Embeds, ErrorHandler, Helpers
 
 """
 # import libraries
+import json
 import re
 import traceback
 
@@ -24,9 +25,9 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 from ptn.buttonrolebot.classes.FieldData import FieldData
 
 # import local modules
-from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict
+from ptn.buttonrolebot.modules.Embeds import  _generate_embed_from_dict, _color_hex_to_int
 from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError
-from ptn.buttonrolebot.modules.Helpers import _remove_embed_field, is_valid_extension, _get_embed_from_message
+from ptn.buttonrolebot.modules.Helpers import is_valid_extension, _get_embed_from_message, _format_embed_dict
 
 
 # function shared by Edit Bot Embed and /edit_embed to edit an embed sent by the bot
@@ -42,7 +43,7 @@ async def _edit_bot_embed(interaction: discord.Interaction, message: discord.Mes
         # get the embed from the message
         embed_data = _get_embed_from_message(message)
 
-        preview_embed = _generate_embed_from_dict(embed_data)
+        preview_embed = await _generate_embed_from_dict(embed_data, from_json = True)
 
         view = EmbedGenButtons(instruction_embed, embed_data, message, 'edit')
 
@@ -75,6 +76,8 @@ Row 2:
 - Thumbnail URL
 - Author Name
 - Author Avatar URL
+Row 3:
+- JSON
 
 MODALS
 Each button opens a modal that accepts user input for that field and saves it to an instance of EmbedData via set_attribute().
@@ -307,7 +310,52 @@ class EmbedGenButtons(View):
 
         await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
 
-    @discord.ui.button(label="✗ Cancel", style=discord.ButtonStyle.danger, custom_id="embed_gen_cancel_button", row=2)
+    @discord.ui.button(label="📤 JSON Export", style=discord.ButtonStyle.success, custom_id="embed_gen_json_export_button", row=2)
+    async def set_embed_json_export_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_json_export_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_json_export',
+            'title': 'Export JSON',
+            'label': 'JSON data for export:',
+            'style': discord.TextStyle.long,
+            'max_length': 4000,
+            'default': str(self.embed_data.embed_json)
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
+
+    @discord.ui.button(label="📥 JSON Import", style=discord.ButtonStyle.danger, custom_id="embed_gen_json_import_button", row=2)
+    async def set_embed_json_import_button(self, interaction: discord.Interaction, button):
+        print("Received set_embed_json_import_button click")
+
+        # set our modal field info
+        field_info = {
+            'attr': 'embed_json',
+            'title': 'Import JSON',
+            'label': 'JSON data for import:',
+            'style': discord.TextStyle.long,
+            'max_length': 4000,
+            'placeholder': '⚠ WARNING: This will OVERWRITE your existing embed ⚠'
+        }
+
+        # instantiate it into FieldData to send to the modal
+        field_data = FieldData(field_info)
+        print(f'Sending modal field data: {field_data}')
+
+        print(f'Sending modal embed data: {self.embed_data}')
+
+        await interaction.response.send_modal(EmbedContentModal(self.instruction_embed, field_data, self.embed_data, button, view=self))
+
+
+    @discord.ui.button(label="✗ Cancel", style=discord.ButtonStyle.danger, custom_id="embed_gen_cancel_button", row=3)
     async def set_embed_cancel_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_cancel_button click")
         embed = discord.Embed(
@@ -317,7 +365,7 @@ class EmbedGenButtons(View):
         embed.set_footer(text="You can dismiss this message.")
         await interaction.response.edit_message(embed=embed, view=None)
 
-    @discord.ui.button(label="✔ Send Embed", style=discord.ButtonStyle.success, custom_id="embed_gen_send_button", row=2)
+    @discord.ui.button(label="✔ Send Embed", style=discord.ButtonStyle.success, custom_id="embed_gen_send_button", row=3)
     async def set_embed_send_button(self, interaction: discord.Interaction, button):
         print("Received set_embed_send_button click")
 
@@ -330,7 +378,7 @@ class EmbedGenButtons(View):
 
         try:
             print("Calling function to generate Embed...")
-            send_embed = _generate_embed_from_dict(self.embed_data)
+            send_embed = await _generate_embed_from_dict(self.embed_data, from_json = True)
 
 
             if self.action == 'edit':
@@ -377,7 +425,7 @@ class EmbedGenButtons(View):
 class EmbedContentModal(Modal):
     def __init__(self, instruction_embed, field_data: FieldData, embed_data, button, view, timeout = None) -> None:
         super().__init__(title=field_data.title, timeout=timeout)
-        print('Defining variables')
+        print('▶ Defining variables')
         self.spamchannel: discord.TextChannel = bot.get_channel(channel_botspam())
         self.instruction_embed: discord.Embed = instruction_embed
         self.embed_data: EmbedData = embed_data
@@ -385,13 +433,14 @@ class EmbedContentModal(Modal):
         self.field_data: FieldData = field_data
         self.button: discord.ui.Button = button
         # define our field data
-        print('Defining field data')
+        print('▶ Defining field data')
         self.embed_field.label = self.field_data.label
         self.embed_field.placeholder = self.field_data.placeholder
         self.embed_field.style = self.field_data.style
         self.embed_field.required = self.field_data.required
         self.embed_field.max_length = self.field_data.max_length
         self.embed_field.default = self.field_data.default
+        print('☑ Finished definitions.')
 
     embed_field = discord.ui.TextInput(
         label="Label"
@@ -400,23 +449,81 @@ class EmbedContentModal(Modal):
     async def on_submit(self, interaction: discord.Interaction):
         print(f'Received EmbedContentModal submit for {self.field_data.attr}')
 
-        if self.field_data.attr == 'embed_color':
+        if self.field_data.attr == 'embed_json_export':
+            # this is read-only, we don't need to do anything
+            print("Export JSON complete.")
+            await interaction.response.defer()
+            return
+
+        elif self.field_data.attr == 'embed_json':
+            # check for empty input
+            if self.embed_field.value == "":
+                print("User left this field blank, doing nothing.")
+                try:
+                    # notify user
+                    raise CustomError(f"Please input a valid JSON to import.")
+                except Exception as e:
+                    await on_generic_error(self.spamchannel, interaction, e)
+                return
+
+            else:
+                # we need to rebuild the embed from the new json
+                try:
+                    # update embed data
+                    self.embed_data.embed_json = self.embed_field.value
+
+                    # update our preview embed
+                    print('Updating preview embed')
+                    preview_embed = await _generate_embed_from_dict(self.embed_data, from_json = True)
+
+                    # repopulate embed_data from new embed
+                    embed_fields = {
+                        'embed_title': preview_embed.title,
+                        'embed_description': preview_embed.description,
+                        'embed_image_url': preview_embed.image.url,
+                        'embed_footer': preview_embed.footer.text,
+                        'embed_thumbnail_url': preview_embed.thumbnail.url,
+                        'embed_author_name': preview_embed.author.name,
+                        'embed_author_avatar_url': preview_embed.author.icon_url,
+                        'embed_color': preview_embed.color,
+                        'embed_json': _format_embed_dict(preview_embed)
+                    }
+                    for key, value in embed_fields.items():
+                        setattr(self.embed_data, key, value)
+
+                    print(f'▶ Updated embed_data: {self.embed_data}')
+
+                except json.JSONDecodeError as e:
+                    try:
+                        traceback.print_exc()
+                        # notify user
+                        raise CustomError(f"Entry does not appear to be a valid Discord embed JSON: {e}")
+                    except Exception as e:
+                        await on_generic_error(self.spamchannel, interaction, e)
+                    return
+
+                except Exception as e:
+                    try:
+                        traceback.print_exc()
+                        # notify user
+                        raise GenericError(e)
+                    except Exception as e:
+                        await on_generic_error(self.spamchannel, interaction, e)
+                    return
+
+
+        elif self.field_data.attr == 'embed_color':
             print('Received COLOR input')
         # turn color input into an INT and store it
             if self.embed_field.value:
-                color_input = self.embed_field.value
-                print(f"User entered color as {color_input}, we'll check it's valid and convert it to int")
-                if re.match(constants.HEX_COLOR_PATTERN, color_input):
+                print(f"User entered color as {self.embed_field.value}, we'll check it's valid and convert it to int")
+                if re.match(constants.HEX_COLOR_PATTERN, self.embed_field.value):
                     print('Received valid hex match')
-                    if color_input.startswith('#'): # check if we have an HTML color code
-                        print(f"Received web color code with #: {color_input}, stripping leading #...")
-                        color_input = color_input.lstrip('#')
-                        print(f"New value: {color_input}")
                     try:
-                        color_int = int(color_input, 16)  # Convert hex string to integer
-                        print(f'Converted {color_input} to {color_int}')
+                        color_int = await _color_hex_to_int(self.embed_field.value)
                         self.embed_data.embed_color = color_int
                         print(self.embed_data.embed_color)
+
                     except ValueError as e:
                         print(e)
                         try:
@@ -424,6 +531,7 @@ class EmbedContentModal(Modal):
                         except Exception as e:
                             await on_generic_error(self.spamchannel, interaction, e)
                         pass
+
                 else:
                     error = f"'{self.embed_field.value}' is not a valid hex color code."
                     try:
@@ -436,7 +544,7 @@ class EmbedContentModal(Modal):
                 self.embed_data.embed_color = constants.EMBED_COLOUR_PTN_DEFAULT
                 print(self.embed_data.embed_color)
 
-        else: # i.e. if anything other than color is being set
+        else: # i.e. if anything else is being set
             if self.embed_field.value == "":
                 print("User left this field blank.")
                 self.embed_data.set_attribute(self.field_data.attr, None)
@@ -463,11 +571,16 @@ class EmbedContentModal(Modal):
                 self.embed_data.set_attribute(self.field_data.attr, None)
 
 
-        print(f'▶ Updated embed_data: {self.embed_data}')
+        if 'json' not in self.field_data.attr:
+            # update the embed the old-fashioned way
+            print(f'▶ Updated embed_data: {self.embed_data}')
 
-        # update our preview embed
-        print('Updating preview embed')
-        preview_embed = _generate_embed_from_dict(self.embed_data)
+            # update our preview embed
+            print('Updating preview embed')
+            preview_embed = await _generate_embed_from_dict(self.embed_data)
+
+            # tidy up our json field so it's in the right order
+            self.embed_data.embed_json = _format_embed_dict(preview_embed)
 
         embeds = [self.instruction_embed, preview_embed]
 
@@ -484,6 +597,7 @@ class EmbedContentModal(Modal):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         try:
+            traceback.print_exc()
             raise GenericError(error)
         except Exception as e:
             await on_generic_error(self.spamchannel, interaction, e)
