@@ -5,6 +5,8 @@ Depends on: ErrorHandler, Constants
 
 """
 # import libraries
+from collections import OrderedDict
+import json
 import os
 import traceback
 from urllib.parse import urlparse
@@ -13,21 +15,21 @@ import validators
 # import discord.py
 import discord
 from discord import app_commands
-from discord.ui import View
 
 # import bot
 from ptn.buttonrolebot.bot import bot, DynamicButton
 
 # import constants
 from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS, EMBED_COLOUR_OK, role_brb, \
-    role_mod, role_council
+    role_mod, role_council, EMBED_DICT_SCHEMA
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
 from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error, CommandPermissionError
+from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error, \
+    CommandPermissionError
 
 
 """
@@ -171,7 +173,8 @@ def _get_embed_from_message(message: discord.Message):
             'embed_thumbnail_url': embed.thumbnail.url,
             'embed_author_name': embed.author.name,
             'embed_author_avatar_url': embed.author.icon_url,
-            'embed_color': embed.color
+            'embed_color': embed.color,
+            'embed_json': _format_embed_dict(embed)
         }
     # generate embed_data from the sent embed
     embed_data = EmbedData(embed_fields)
@@ -238,3 +241,11 @@ async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, m
         view = discord.ui.View(timeout=None)"""
 
     return view
+
+
+def _format_embed_dict(embed: discord.Embed):
+    embed_dict = embed.to_dict()
+    ordered_dict = OrderedDict((key, embed_dict[key]) for key in EMBED_DICT_SCHEMA if key in embed_dict)
+    formatted_dict = json.dumps(ordered_dict, ensure_ascii=False, indent=4)
+    print("✅ Formatted dict: %s" % (formatted_dict))
+    return formatted_dict
