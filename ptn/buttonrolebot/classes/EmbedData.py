@@ -1,4 +1,5 @@
 from ptn.buttonrolebot.constants import EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
+import json
 
 class EmbedData:
 
@@ -22,6 +23,7 @@ class EmbedData:
         self.embed_author_name = info_dict.get('embed_author_name', None)
         self.embed_author_avatar_url = info_dict.get('embed_author_avatar_url', None)
         self.embed_color = info_dict.get('embed_color', EMBED_COLOUR_PTN_DEFAULT)
+        self.embed_json = info_dict.get('embed_json', None)
 
 
     def to_dictionary(self):
@@ -59,7 +61,7 @@ class EmbedData:
         return 'EmbedData: embed_title:{0.embed_title} | embed_description:{0.embed_description} | ' \
                'embed_image:{0.embed_image_url} embed_footer:{0.embed_footer} | embed_thumbnail:{0.embed_thumbnail_url} | ' \
                'embed_author_name:{0.embed_author_name} | embed_author_avatar:{0.embed_author_avatar_url} | ' \
-               'embed_color:{0.embed_color}'.format(self)
+               'embed_color:{0.embed_color} | embed_json:{0.embed_json}'.format(self)
 
 
     def __bool__(self):
