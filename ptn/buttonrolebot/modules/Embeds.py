@@ -77,6 +77,8 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
             footer_dict["text"] = embed_data.embed_footer
         else:
             if "text" in footer_dict: del footer_dict["text"]
+        if footer_dict:
+            embed_json["footer"] = footer_dict
 
         print("▶ Add image")
         image_dict = embed_json.get("image", {})
@@ -84,6 +86,8 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
             image_dict["url"] = embed_data.embed_image_url
         else:
             if "url" in image_dict: del image_dict["url"]
+        if image_dict:
+            embed_json["image"] = image_dict
 
         print("▶ Add thumbnail")
         thumbnail_dict = embed_json.get("thumbnail", {})
@@ -91,6 +95,8 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
             thumbnail_dict["url"] = embed_data.embed_thumbnail_url
         else:
             if "url" in thumbnail_dict: del thumbnail_dict["url"]
+        if thumbnail_dict:
+            embed_json["thumbnail"] = thumbnail_dict
 
         print("▶ Add author")
         author_dict = embed_json.get("author", {})
@@ -102,6 +108,8 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
                 if "icon_url" in author_dict: del author_dict["icon_url"]
         else:
             if "name" in author_dict: del author_dict["name"]
+        if author_dict:
+            embed_json["author"] = author_dict
 
         print("▶ Set color")
         if embed_data.embed_color:
