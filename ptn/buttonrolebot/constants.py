@@ -43,6 +43,7 @@ PROD_ROLE_MOD = 813814494563401780 # PTN Mod role
 PROD_ROLE_CMENTOR = 863521103434350613 # PTN CM role
 PROD_ROLE_SOMMELIER = 838520893181263872 # PTN Sommelier role
 PROD_ROLE_FOPERATIVE = 948206870491959317 # PTN Faction Operative role
+PROD_ROLE_PATHFINDER = 1257039137366605865 # PTN Star Citizen lead role
 PROD_EMOJI_O7 = 806138784294371368 # PTN :o7: emoji
 
 
@@ -56,6 +57,7 @@ TEST_ROLE_MOD = 903292469049974845 # PANTS Mod role
 TEST_ROLE_CMENTOR = 877586763672072193 # PANTS CM role
 TEST_ROLE_SOMMELIER = 849907019502059530 # PANTS Sommelier role
 TEST_ROLE_FOPERATIVE = 1155985589200502844 # PANTS Faction Operative role
+TEST_ROLE_PATHFINDER = 1257318927277756616 # PANTS Star Citizen lead role
 TEST_EMOJI_O7 = 903744117144698950 # PANTS :o7: emoji
 
 
@@ -168,6 +170,9 @@ def role_somm():
 def role_foperative():
     return PROD_ROLE_FOPERATIVE if _production else TEST_ROLE_FOPERATIVE
 
+def role_pathfinder():
+    return PROD_ROLE_PATHFINDER if _production else TEST_ROLE_PATHFINDER
+
 def o7_emoji():
     return PROD_EMOJI_O7 if _production else TEST_EMOJI_O7
 
@@ -192,5 +197,5 @@ Regular emojis can be used by emoji keyboard or Discord shortcut, e.g. :wave: `:
 """
 
 
-any_elevated_role = [role_council(), role_mod(), role_cmentor(), role_somm(), role_foperative()]
+any_elevated_role = [role_council(), role_mod(), role_cmentor(), role_somm(), role_foperative(), role_pathfinder()]
 
