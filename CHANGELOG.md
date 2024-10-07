@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.5
+- [#111](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/111) Added Pathfinder to permitted roles.
+
 ## 1.0.4
 - [#93](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/93) Implemented JSON import/export.
 - [#96](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/96) Implemented via JSON import.
