@@ -7,6 +7,8 @@ The Python script that starts the bot.
 import asyncio
 import os
 
+from discord.ext.prometheus import PrometheusCog
+
 # import bot Cogs
 from ptn.buttonrolebot.botcommands.AdminCommands import AdminCommands
 from ptn.buttonrolebot.botcommands.ButtonRoleCommands import ButtonRoleCommands
@@ -28,6 +30,7 @@ async def buttonrolebot():
     async with bot:
         await bot.add_cog(AdminCommands(bot))
         await bot.add_cog(ButtonRoleCommands(bot))
+        await bot.add_cog(PrometheusCog(bot))
         await bot.start(TOKEN)
 
 
