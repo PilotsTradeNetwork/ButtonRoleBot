@@ -39,7 +39,8 @@ setup(
     install_requires=[
         'DateTime==4.3',
         'discord==1.0.1',
-        'discord.py>=2.3.0', # requires d.py > 2.4.0 which is pre-release. Use pip install -U git+https://github.com/Rapptz/discord.py
+        'discord.py>=2.4.0',
+        'discord-ext-prometheus>=0.2.0',
         'emoji>=2.8.0',
         'python-dotenv==0.15.0',
         'python-dateutil>=2.8.1',

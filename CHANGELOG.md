@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.6
+- [#116](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/116) added prometheus logging (IndorilReborn)
+
 ## 1.0.5
 - [#111](https://github.com/PilotsTradeNetwork/ButtonRoleBot/issues/111) Added Pathfinder to permitted roles.
 
