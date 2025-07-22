@@ -1,4 +1,4 @@
-FROM python:3.10-slim-buster
+FROM python:3.10-slim-bookworm
 RUN apt-get update && apt-get install -y git
 RUN pip3 install -U git+https://github.com/Rapptz/discord.py
 RUN mkdir -p /usr/src/bot
