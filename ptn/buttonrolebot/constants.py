@@ -8,6 +8,8 @@ Depends on: nothing
 import ast
 import os
 import discord
+import sys
+import logging
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -199,3 +201,23 @@ Regular emojis can be used by emoji keyboard or Discord shortcut, e.g. :wave: `:
 
 any_elevated_role = [role_council(), role_mod(), role_cmentor(), role_somm(), role_foperative(), role_pathfinder()]
 
+# define the logger for discord client and asyncpraw.
+# TODO: use PTNLogger and extend to all MAB Logging
+log_handler = logging.StreamHandler(sys.stdout)
+
+loglevel_input = os.getenv('ROLE_BOT_LOG_LEVEL', 'INFO')
+match loglevel_input:
+    case 'CRITICAL':
+        LOG_LEVEL = logging.CRITICAL
+
+    case 'ERROR':
+        LOG_LEVEL = logging.ERROR
+
+    case 'INFO':
+        LOG_LEVEL = logging.INFO
+
+    case 'DEBUG':
+        LOG_LEVEL = logging.DEBUG
+
+    case _:
+        LOG_LEVEL = logging.INFO

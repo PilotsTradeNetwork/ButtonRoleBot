@@ -14,7 +14,8 @@ from ptn.buttonrolebot.botcommands.AdminCommands import AdminCommands
 from ptn.buttonrolebot.botcommands.ButtonRoleCommands import ButtonRoleCommands
 
 # import bot object, token, production status
-from ptn.buttonrolebot.constants import TOKEN, _production, DATA_DIR
+from ptn.buttonrolebot.constants import TOKEN, _production, DATA_DIR, log_handler, LOG_LEVEL
+from discord.utils import setup_logging
 from ptn.buttonrolebot.bot import bot
 
 print(f"Data dir is {DATA_DIR} from {os.path.join(os.getcwd(), 'ptn', 'buttonrolebot', DATA_DIR, '.env')}")
@@ -31,6 +32,7 @@ async def buttonrolebot():
         await bot.add_cog(AdminCommands(bot))
         await bot.add_cog(ButtonRoleCommands(bot))
         await bot.add_cog(PrometheusCog(bot))
+        setup_logging(handler=log_handler, level=LOG_LEVEL)
         await bot.start(TOKEN)
 
 
