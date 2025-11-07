@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1
+- [#128](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/128) Disable member caching, prune intents (axleantilles)
+- [#124](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/124) Add selectable loglevel to ButtonRoleBot (axleantilles)
+- [#125](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/125) Adding debug logging capabilities (dupsatou)
+
 ## 1.0.7
 - [#120](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/120) Update docker image base (IndorilReborn)
 
