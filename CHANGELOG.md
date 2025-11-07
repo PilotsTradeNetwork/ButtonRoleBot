@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.7
+- [#120](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/120) Update docker image base (IndorilReborn)
+
 ## 1.0.6
 - [#116](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/116) added prometheus logging (IndorilReborn)
 
