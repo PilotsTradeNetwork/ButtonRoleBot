@@ -1,6 +1,7 @@
 FROM python:3.10-slim-bookworm
 RUN apt-get update && apt-get install -y git
-RUN pip3 install -U git+https://github.com/Rapptz/discord.py
+#This is getting a 'bleeding edge' version
+#RUN pip3 install -U git+https://github.com/Rapptz/discord.py
 RUN mkdir -p /usr/src/bot
 WORKDIR /usr/src/bot
 COPY setup.py .
