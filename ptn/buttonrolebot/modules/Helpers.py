@@ -15,6 +15,7 @@ import validators
 # import discord.py
 import discord
 from discord import app_commands
+from ptn.buttonrolebot.utils import get_member
 
 # import bot
 from ptn.buttonrolebot.bot import bot, DynamicButton
@@ -83,7 +84,7 @@ def check_roles(permitted_role_ids):
 
 def check_channel_permissions(): # does this work? I have no idea. Discord seems to disable interactions in channels you don't have send permissions in, even if explicitly enabled. 🤷‍♀️
     async def checkuserperms(interaction: discord.Interaction):
-        member: discord.Member = interaction.guild.get_member(interaction.user.id)
+        member: discord.Member = await get_member(bot, interaction.user.id)
         user_permissions: discord.Permissions = interaction.channel.permissions_for(member)
         permission = user_permissions.send_messages
         if not permission:
@@ -100,7 +101,7 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
     print(f"Called button_role_checks for {role}")
     try:
         # check if we have permission to manage this role
-        bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+        bot_member: discord.Member = await get_member(bot, bot.user.id)
         if bot_member.top_role <= role or role.managed:
             print("We don't have permission for this role")
             try:

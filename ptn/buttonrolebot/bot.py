@@ -24,6 +24,7 @@ from ptn.buttonrolebot.constants import channel_botdev, channel_botspam, EMBED_C
 
 # import modules
 from ptn.buttonrolebot.modules.ErrorHandler import CustomError, on_generic_error
+from ptn.buttonrolebot.utils import get_member
 
 
 """
@@ -80,7 +81,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                 role = discord.utils.get(interaction.guild.roles, id=self.role_id)
 
                 # check if we have permissions for this role
-                bot_member: discord.Member = interaction.guild.get_member(bot.user.id)
+                bot_member: discord.Member = await get_member(bot, bot.user.id)
                 if bot_member.top_role <= role or role.managed:
                     print(f"⚠ We don't have permission for {role}")
                     try:
@@ -211,10 +212,13 @@ Bot object
 # define bot object
 class ButtonRoleBot(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.all()
+        intents = discord.Intents.none()
         intents.message_content = True
+        intents.members = True
+        intents.messages = True
+        intents.guilds = True
 
-        super().__init__(command_prefix=commands.when_mentioned_or('🎢'), intents=intents)
+        super().__init__(command_prefix=commands.when_mentioned_or('🎢'), intents=intents, chunk_guilds_at_startup=False)
 
     async def setup_hook(self) -> None:
 
