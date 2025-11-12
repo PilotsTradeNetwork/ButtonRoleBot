@@ -14,7 +14,7 @@ from ptn.buttonrolebot.bot import bot
 # local constants
 from ptn.buttonrolebot._metadata import __version__
 import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import role_council, role_mod
+from ptn.buttonrolebot.constants import role_council, role_mod, LOG_LEVEL
 
 # local modules
 # from ptn.buttonrolebot.modules.Embeds import None
@@ -112,3 +112,37 @@ class AdminCommands(commands.Cog):
                 logging.error(f"Tree sync failed: {e}.")
                 logging.exception(e)
                 return await ctx.send(f"Failed to sync bot tree: {e}")
+
+
+    @commands.command(name='enabledebug', help='Enables debug logging for Rolercoaster application (not discord.py).')
+    @commands.has_any_role(*constants.any_elevated_role)
+    async def enabledebug(self, ctx):
+        logging.info(f"Interaction enabledebug called from {ctx.author.display_name}")
+        async with ctx.typing():
+            try:
+                logger = logging.getLogger("root")
+                logger.setLevel(logging.DEBUG)
+                dpy = logging.getLogger("discord")
+                dpy.setLevel(LOG_LEVEL)
+                logging.info("Rolercoaster Application debug logging enabled.")
+                await ctx.send("Rolercoaster Application debug logging enabled.")
+            except Exception as e:
+                logging.error(f"Debug log enable failed: {e}.")
+                logging.exception(e)
+                return await ctx.send(f"Failed to enable debug logging: {e}")
+
+
+    @commands.command(name='disabledebug', help='Disables debug logging for Rolercoaster application (not discord.py).')
+    @commands.has_any_role(*constants.any_elevated_role)
+    async def disabledebug(self, ctx):
+        logging.info(f"Interaction disabledebug called from {ctx.author.display_name}")
+        async with ctx.typing():
+            try:
+                logger = logging.getLogger("root")
+                logger.setLevel(LOG_LEVEL)
+                logging.info("Rolercoaster Application debug logging disabled.")
+                await ctx.send("Rolercoaster Application debug logging disabled.")
+            except Exception as e:
+                logging.error(f"Debug log disable failed: {e}.")
+                logging.exception(e)
+                return await ctx.send(f"Failed to disable debug logging: {e}")
