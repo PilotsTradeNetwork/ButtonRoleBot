@@ -4,35 +4,48 @@ A module for helper functions called by other modules.
 Depends on: ErrorHandler, Constants
 
 """
-# import libraries
-from collections import OrderedDict
+
 import json
+import logging
 import os
 import traceback
+
+# import libraries
+from collections import OrderedDict
 from urllib.parse import urlparse
-import validators
-import logging
 
 # import discord.py
 import discord
+import validators
 from discord import app_commands
-from ptn.buttonrolebot.utils import get_member
 
 # import bot
-from ptn.buttonrolebot.bot import bot, DynamicButton
-
-# import constants
-from ptn.buttonrolebot.constants import bot_guild, channel_botspam, VALID_EXTENSIONS, EMBED_COLOUR_OK, role_brb, \
-    role_mod, role_council, EMBED_DICT_SCHEMA
+from ptn.buttonrolebot.bot import DynamicButton, bot
+from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # import classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
-from ptn.buttonrolebot.classes.EmbedData import EmbedData
+
+# import constants
+from ptn.buttonrolebot.constants import (
+    EMBED_COLOUR_OK,
+    EMBED_DICT_SCHEMA,
+    VALID_EXTENSIONS,
+    bot_guild,
+    channel_botspam,
+    role_brb,
+    role_council,
+    role_mod,
+)
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import CommandRoleError, CustomError, on_generic_error, \
-    CommandPermissionError
-
+from ptn.buttonrolebot.modules.ErrorHandler import (
+    CommandPermissionError,
+    CommandRoleError,
+    CustomError,
+    on_generic_error,
+)
+from ptn.buttonrolebot.utils import get_member
 
 """
 PERMISSION CHECKS
@@ -42,10 +55,12 @@ Used for application commands
 
 spamchannel = bot.get_channel(channel_botspam())
 
+
 # trio of helper functions to check a user's permission to run a command based on their roles, and return a helpful error if they don't have the correct role(s)
-def getrole(ctx, id): # takes a Discord role ID and returns the role object
+def getrole(ctx, id):  # takes a Discord role ID and returns the role object
     role = discord.utils.get(ctx.guild.roles, id=id)
     return role
+
 
 async def checkroles_actual(interaction: discord.Interaction, permitted_role_ids):
     try:
@@ -58,7 +73,7 @@ async def checkroles_actual(interaction: discord.Interaction, permitted_role_ids
         logging.debug(author_roles)
         logging.debug(permitted_roles)
         permission = True if any(x in permitted_roles for x in author_roles) else False
-        logging.debug(f'Permission: {permission}')
+        logging.debug(f"Permission: {permission}")
         return permission, permitted_roles
     except Exception as e:
         logging.exception(e)
@@ -69,10 +84,10 @@ def check_roles(permitted_role_ids):
     async def checkroles(interaction: discord.Interaction):
         permission, permitted_roles = await checkroles_actual(interaction, permitted_role_ids)
         logging.debug("Inherited permission from checkroles")
-        if not permission: # raise our custom error to notify the user gracefully
+        if not permission:  # raise our custom error to notify the user gracefully
             role_list = []
             for role in permitted_role_ids:
-                role_list.append(f'<@&{role}> ')
+                role_list.append(f"<@&{role}> ")
                 formatted_role_list = " • ".join(role_list)
             try:
                 raise CommandRoleError(permitted_roles, formatted_role_list)
@@ -80,6 +95,7 @@ def check_roles(permitted_role_ids):
                 logging.exception(e)
                 raise
         return permission
+
     return app_commands.check(checkroles)
 
 
@@ -87,6 +103,7 @@ def check_channel_permissions():
     """
     does this work? I have no idea. Discord seems to disable interactions in channels you don't have send permissions in, even if explicitly enabled. 🤷‍♀️
     """
+
     async def checkuserperms(interaction: discord.Interaction):
         member: discord.Member = await get_member(bot, interaction.user.id)
         user_permissions: discord.Permissions = interaction.channel.permissions_for(member)
@@ -98,6 +115,7 @@ def check_channel_permissions():
                 logging.exception(e)
                 raise
         return permission
+
     return app_commands.check(checkuserperms)
 
 
@@ -109,7 +127,9 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
         if bot_member.top_role <= role or role.managed:
             logging.debug("We don't have permission for this role")
             try:
-                raise CustomError(f"I don't have permission to manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** .")
+                raise CustomError(
+                    f"I don't have permission to manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** ."
+                )
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
             return False
@@ -123,8 +143,10 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
             if not permission:
                 logging.debug("User doesn't have permission to manage this role.")
                 try:
-                    error = f'To manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** ' \
-                            f'you require one of the following roles: <@&{role_mod()}>  •  <@&{role_council()}>'
+                    error = (
+                        f"To manage <@&{role.id}> on **{button_data.button_emoji} {button_data.button_label}** "
+                        f"you require one of the following roles: <@&{role_mod()}>  •  <@&{role_council()}>"
+                    )
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
@@ -135,9 +157,11 @@ async def button_role_checks(interaction: discord.Interaction, role: discord.Rol
     except Exception as e:
         logging.exception(e)
 
+
 """
 Helpers
 """
+
 
 async def get_guild():
     """
@@ -168,30 +192,31 @@ def _remove_embed_field(embed, field_name_to_remove):
 
 def _get_embed_from_message(message: discord.Message):
     """
-        populate embed_fields from an embed in a message
+    populate embed_fields from an embed in a message
     """
-    logging.debug('Called _get_embed_from_message')
+    logging.debug("Called _get_embed_from_message")
     for embed in message.embeds:
         embed_fields = {
-            'embed_title': embed.title,
-            'embed_description': embed.description,
-            'embed_image_url': embed.image.url,
-            'embed_footer': embed.footer.text,
-            'embed_thumbnail_url': embed.thumbnail.url,
-            'embed_author_name': embed.author.name,
-            'embed_author_avatar_url': embed.author.icon_url,
-            'embed_color': embed.color,
-            'embed_json': _format_embed_dict(embed)
+            "embed_title": embed.title,
+            "embed_description": embed.description,
+            "embed_image_url": embed.image.url,
+            "embed_footer": embed.footer.text,
+            "embed_thumbnail_url": embed.thumbnail.url,
+            "embed_author_name": embed.author.name,
+            "embed_author_avatar_url": embed.author.icon_url,
+            "embed_color": embed.color,
+            "embed_json": _format_embed_dict(embed),
         }
     # generate embed_data from the sent embed
     embed_data = EmbedData(embed_fields)
-    logging.debug(f'Instantiated embed_data as: {embed_data}')
+    logging.debug(f"Instantiated embed_data as: {embed_data}")
     # return embed_data instance to function
-    return embed_data    
+    return embed_data
+
 
 async def check_role_exists(interaction, role_id):
     """
-        check if a role exists
+    check if a role exists
     """
     logging.debug(f"Called check_role_exists for {role_id}")
     try:
@@ -206,12 +231,12 @@ async def check_role_exists(interaction, role_id):
             logging.exception(e)
             await on_generic_error(spamchannel, interaction, e)
         return None
-    
+
 
 async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, message: discord.Message):
     """
-        add role button to message
-        this one is kind of a big deal
+    add role button to message
+    this one is kind of a big deal
     """
     logging.debug("Called _add_role_buttons_to_view")
 
@@ -222,7 +247,9 @@ async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, m
         logging.debug(button_data_instance)
         style: discord.ButtonStyle = button_data_instance.button_style
         logging.debug("Instantiating DynamicButton component")
-        button = DynamicButton(button_data_instance.button_action, button_data_instance.role_id, button_data_instance.message.id)
+        button = DynamicButton(
+            button_data_instance.button_action, button_data_instance.role_id, button_data_instance.message.id
+        )
         logging.debug(f"🔘 Generated DynamicButton from set {button_data_instance.unique_id}")
 
         logging.debug("Setting button properties")
@@ -237,7 +264,7 @@ async def _add_role_buttons_to_view(interaction: discord.Interaction, buttons, m
         logging.debug("Logging to bot-spam")
         embed = discord.Embed(
             description=f"🔘 <@{interaction.user.id}> added a button to {message.jump_url} to {button_data_instance.button_action} the <@&{button_data_instance.role_id}> role.",
-            color=EMBED_COLOUR_OK
+            color=EMBED_COLOUR_OK,
         )
 
         spamchannel = bot.get_channel(channel_botspam())

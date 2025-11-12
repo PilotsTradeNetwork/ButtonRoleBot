@@ -1,7 +1,7 @@
 import discord
 
-class FieldData:
 
+class FieldData:
     def __init__(self, info_dict=None):
         """
         Class represents field data for a Modal as returned from user input.
@@ -14,15 +14,14 @@ class FieldData:
         else:
             info_dict = dict()
 
-        self.attr = info_dict.get('attr', None)
-        self.title = info_dict.get('title', None)
-        self.label = info_dict.get('label', None)
-        self.placeholder = info_dict.get('placeholder', 'Leave blank for none.')
-        self.style = info_dict.get('style', discord.TextStyle.long)
-        self.required = info_dict.get('required', False)
-        self.max_length = info_dict.get('max_length', 512)
-        self.default = info_dict.get('default', None)
-
+        self.attr = info_dict.get("attr", None)
+        self.title = info_dict.get("title", None)
+        self.label = info_dict.get("label", None)
+        self.placeholder = info_dict.get("placeholder", "Leave blank for none.")
+        self.style = info_dict.get("style", discord.TextStyle.long)
+        self.required = info_dict.get("required", False)
+        self.max_length = info_dict.get("max_length", 512)
+        self.default = info_dict.get("default", None)
 
     def to_dictionary(self):
         """
@@ -43,9 +42,10 @@ class FieldData:
 
         :rtype: str
         """
-        return 'Attr: {0.attr} | Title: {0.title} | Label:{0.label} | Placeholder:{0.placeholder} |' \
-               ' Style:{0.style} | Required:{0.required} | Max_length:{0.max_length} | Default:{0.default}'.format(self)
-
+        return (
+            "Attr: {0.attr} | Title: {0.title} | Label:{0.label} | Placeholder:{0.placeholder} |"
+            " Style:{0.style} | Required:{0.required} | Max_length:{0.max_length} | Default:{0.default}".format(self)
+        )
 
     def __bool__(self):
         """

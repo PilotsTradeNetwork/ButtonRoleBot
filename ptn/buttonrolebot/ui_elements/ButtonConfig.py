@@ -2,41 +2,42 @@
 A set of discord.ui elements for customising buttons added by BRB.
 
 """
-# import libraries
-import emoji
+
+import logging
 import random
 import re
 import traceback
 import uuid
-import logging
 
 # import discord
 import discord
+
+# import libraries
+import emoji
 from discord import HTTPException
 from discord.interactions import Interaction
-from discord.ui import View, Modal, Button
+from discord.ui import Button, Modal, View
+
+# import local constants
+import ptn.buttonrolebot.constants as constants
 
 # import bot
 from ptn.buttonrolebot.bot import bot
 
 # import local classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
-
-# import local constants
-import ptn.buttonrolebot.constants as constants
-from ptn.buttonrolebot.constants import channel_botspam, DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS
+from ptn.buttonrolebot.constants import DEFAULT_BUTTON_LABEL, DEFAULT_BUTTON_LABELS, HOORAY_GIFS, channel_botspam
+from ptn.buttonrolebot.modules.Embeds import amazing_embed, button_config_embed, button_edit_heading_embed, stress_embed
 
 # import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
-from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed, button_edit_heading_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_buttons_to_view, button_role_checks
-
+from ptn.buttonrolebot.modules.ErrorHandler import BadRequestError, CustomError, GenericError, on_generic_error
+from ptn.buttonrolebot.modules.Helpers import _add_role_buttons_to_view, button_role_checks, check_role_exists
 
 spamchannel = bot.get_channel(channel_botspam())
 
 
 def _find_lowest_available_row(buttons: list):
-    logging.debug(f'Called _find_lowest_available_row for {buttons}')
+    logging.debug(f"Called _find_lowest_available_row for {buttons}")
     # Initialize a dictionary to count the number of instances in each row
     row_counts = {0: 0, 1: 0, 2: 0, 3: 0}
 
@@ -54,7 +55,7 @@ def _find_lowest_available_row(buttons: list):
 
 
 async def _reposition_button(interaction: discord.Interaction, buttons, button_data: RoleButtonData, action):
-    logging.debug(f'Called {_reposition_button.__name__} with action: {action}')
+    logging.debug(f"Called {_reposition_button.__name__} with action: {action}")
     row = button_data.button_row
     target_id = button_data.unique_id
     current_index = None
@@ -73,42 +74,41 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
             buttons.insert(new_index, button_to_move)
             logging.debug(buttons)
 
-        if action == 'left' or action == 'right':
+        if action == "left" or action == "right":
             logging.debug("Horizontal movement")
             # edit position in buttons list
-            
-            if action == 'left' and current_index >= 1:
+
+            if action == "left" and current_index >= 1:
                 new_index = current_index - 1
                 move_button(new_index, current_index)
-            elif action == 'right' and current_index <=18: # 19 is the max (20 items including 0)
+            elif action == "right" and current_index <= 18:  # 19 is the max (20 items including 0)
                 new_index = current_index + 1
                 move_button(new_index, current_index)
             else:
                 logging.debug(f"Button in position {current_index} cannot be moved {action}")
                 return
 
-
-        elif action == 'down' or action == 'up':
-            if action == 'down':
+        elif action == "down" or action == "up":
+            if action == "down":
                 # edit row down within bounds
                 if row == 3:
                     logging.debug("Button can't go further down, ignoring")
                     embed = discord.Embed(
                         description="⚠ Button already in ⏬ bottom row. Move other buttons 🔼 up if needed.",
-                        color=constants.EMBED_COLOUR_ERROR
+                        color=constants.EMBED_COLOUR_ERROR,
                     )
                     embed.set_footer(text="You can dismiss this message.")
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
                 else:
                     new_row = row + 1
 
-            elif  action == 'up':
+            elif action == "up":
                 # edit row up within bounds
                 if row == 0:
                     logging.debug("Button can't go further up, ignoring")
                     embed = discord.Embed(
                         description="⚠ Button already in ⏫ top row. Move other buttons 🔽 down if needed.",
-                        color=constants.EMBED_COLOUR_ERROR
+                        color=constants.EMBED_COLOUR_ERROR,
                     )
                     embed.set_footer(text="You can dismiss this message.")
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -120,9 +120,9 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
             if count >= 5:
                 logging.debug("Could not move button to row: Row already full.")
                 embed = discord.Embed(
-                    description='⚠ Could not move button because target row already has the maximum number of buttons (5). '\
-                                'You may need to move a button out of the target row to move your button in.',
-                    color=constants.EMBED_COLOUR_ERROR
+                    description="⚠ Could not move button because target row already has the maximum number of buttons (5). "
+                    "You may need to move a button out of the target row to move your button in.",
+                    color=constants.EMBED_COLOUR_ERROR,
                 )
                 embed.set_footer(text="You can dismiss this message.")
                 return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -134,7 +134,7 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
             # re-order our list by row
             button_rows = {}
             # Group buttons by row
-            logging.debug('▶ Repacking list based on new row hierarchy.')
+            logging.debug("▶ Repacking list based on new row hierarchy.")
             for button_data_instance in buttons:
                 if button_data_instance.button_row not in button_rows:
                     button_rows[button_data_instance.button_row] = []
@@ -151,7 +151,7 @@ async def _reposition_button(interaction: discord.Interaction, buttons, button_d
         await _update_preview(Interaction, buttons, button_data)
 
         return
-    
+
     except Exception as e:
         logging.exception(e)
         try:
@@ -180,12 +180,11 @@ async def _check_for_button_conflict(interaction: discord.Interaction, buttons: 
         if conflicting_data is not None:
             logging.debug("▶ Notifying user of conflict.")
             embed = discord.Embed(
-                description="❌ Each message can only have one button with a given role and action combination. " \
-                           f"You already have a button with role <@&{button_data_instance.role_id}> and "
-                            f"action {button_data_instance.button_action} attached to this message as " \
-                            f"**{button_data_instance.button_emoji} {button_data_instance.button_label}**",
-                            
-                color=constants.EMBED_COLOUR_ERROR
+                description="❌ Each message can only have one button with a given role and action combination. "
+                f"You already have a button with role <@&{button_data_instance.role_id}> and "
+                f"action {button_data_instance.button_action} attached to this message as "
+                f"**{button_data_instance.button_emoji} {button_data_instance.button_label}**",
+                color=constants.EMBED_COLOUR_ERROR,
             )
             embed.set_footer(text="You can dismiss this message.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -204,7 +203,7 @@ async def _check_for_button_conflict(interaction: discord.Interaction, buttons: 
 
 
 async def _remove_button(interaction: discord.Interaction, buttons: list, button_data: RoleButtonData):
-    logging.debug(f'Called _remove_button with {button_data}')
+    logging.debug(f"Called _remove_button with {button_data}")
     try:
         original_interaction: discord.Interaction = button_data.preview_message
         view = View(timeout=None)
@@ -247,7 +246,7 @@ async def _remove_button(interaction: discord.Interaction, buttons: list, button
 
 
 async def _update_preview(interaction, buttons: list, button_data: RoleButtonData):
-    logging.debug(f'Called update_preview with {button_data}')
+    logging.debug(f"Called update_preview with {button_data}")
     try:
         original_interaction: discord.Interaction = button_data.preview_message
         view = View(timeout=None)
@@ -305,7 +304,7 @@ class NewButton(Button):
             emoji=self.emoji_value,
             style=self.button_data.button_style,
             custom_id=self.button_data.unique_id,
-            row=self.button_data.button_row
+            row=self.button_data.button_row,
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -355,6 +354,8 @@ Multi-part message supported by embeds:
 """
 INDEX FUNCTIONS
 """
+
+
 # a function to choose view based on index
 def _select_view_from_index(index, buttons, button_data: RoleButtonData):
     logging.debug("Called _select_view_from_index")
@@ -382,7 +383,7 @@ def _select_view_from_index(index, buttons, button_data: RoleButtonData):
 # function to increment index by one
 def _increment_index(index, buttons, button_data: RoleButtonData):
     logging.debug("Called _increment_index")
-    if index <= 4: 
+    if index <= 4:
         index += 1
         # generate new embed
         embed = button_config_embed(index, button_data)
@@ -406,6 +407,8 @@ def _decrement_index(index, buttons, button_data: RoleButtonData):
 """
 GLOBAL COMPONENT BUTTONS
 """
+
+
 class MasterCommitButton(Button):
     def __init__(self, buttons, button_data):
         logging.debug("Initialising MasterCommitButton")
@@ -414,10 +417,10 @@ class MasterCommitButton(Button):
         self.message: discord.Message = self.button_data.message
         self.spamchannel = bot.get_channel(channel_botspam())
         super().__init__(
-            label='✔',
+            label="✔",
             style=discord.ButtonStyle.success,
             custom_id="master_commit_button",
-            row=4 # max row number
+            row=4,  # max row number
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -430,7 +433,7 @@ class MasterCommitButton(Button):
             if not self.buttons:
                 embed = discord.Embed(
                     description=f"❌ No buttons to commit! Use the **➕** button to add one.",
-                                color=constants.EMBED_COLOUR_ERROR
+                    color=constants.EMBED_COLOUR_ERROR,
                 )
                 embed.set_footer(text="You can dismiss this message.")
                 return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -441,18 +444,18 @@ class MasterCommitButton(Button):
             for button_data_instance in self.buttons:
                 if button_data_instance.role_object == None:
                     button_incomplete = True
-                    missing_information = 'missing an attached role'
+                    missing_information = "missing an attached role"
                     pass
                 elif button_data_instance.button_label in DEFAULT_BUTTON_LABELS:
                     button_incomplete = True
-                    missing_information = 'using the default label'
+                    missing_information = "using the default label"
                     pass
 
                 if button_incomplete:
                     embed = discord.Embed(
-                        description=f"❌ **{button_data_instance.button_emoji} {button_data_instance.button_label}** " \
-                                    f"is {missing_information}. Please click on it to edit it and correct this.",
-                                    color=constants.EMBED_COLOUR_ERROR
+                        description=f"❌ **{button_data_instance.button_emoji} {button_data_instance.button_label}** "
+                        f"is {missing_information}. Please click on it to edit it and correct this.",
+                        color=constants.EMBED_COLOUR_ERROR,
                     )
                     embed.set_footer(text="You can dismiss this message.")
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -474,15 +477,15 @@ class MasterCommitButton(Button):
 
             # edit it into the target message
             await self.message.edit(view=view)
-            
+
             # display our success message TODO
             gif = random.choice(HOORAY_GIFS)
 
             embed = discord.Embed(
-                description=f':partying_face: **Button(s) updated on {self.message.jump_url}**',
-                color=constants.EMBED_COLOUR_OK
+                description=f":partying_face: **Button(s) updated on {self.message.jump_url}**",
+                color=constants.EMBED_COLOUR_OK,
             )
-       
+
             embed.set_image(url=gif)
 
             view = StressButtonView(self.button_data)
@@ -502,6 +505,7 @@ class MasterCommitButton(Button):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
+
 class MasterCancelButton(Button):
     def __init__(self):
         logging.debug("Initialising MasterCancelButton")
@@ -509,17 +513,17 @@ class MasterCancelButton(Button):
             label="✗",
             style=discord.ButtonStyle.danger,
             custom_id="master_cancel_button",
-            row=4 # max row number
+            row=4,  # max row number
         )
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received ✖ master_cancel_button click")
         embed = discord.Embed(
-            description="❎ **Button Manager closed without making changes.**.",
-            color=constants.EMBED_COLOUR_QU
+            description="❎ **Button Manager closed without making changes.**.", color=constants.EMBED_COLOUR_QU
         )
         embed.set_footer(text="You can dismiss this message.")
         return await interaction.response.edit_message(embed=embed, view=None)
+
 
 class MasterAddButton(Button):
     def __init__(self, buttons, button_data):
@@ -529,10 +533,10 @@ class MasterAddButton(Button):
         self.spamchannel = bot.get_channel(channel_botspam())
         super().__init__(
             label=None,
-            emoji='➕',
+            emoji="➕",
             style=discord.ButtonStyle.primary,
             custom_id="master_add_button",
-            row=4 # max row number
+            row=4,  # max row number
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -545,7 +549,7 @@ class MasterAddButton(Button):
                 logging.warning("⚠ Too many buttons! Can't add any more.")
                 embed = discord.Embed(
                     description="❌ Can't add any more buttons: this message already has the maximum amount of buttons this bot will allow (20).",
-                    color=constants.EMBED_COLOUR_ERROR
+                    color=constants.EMBED_COLOUR_ERROR,
                 )
                 embed.set_footer(text="You can dismiss this message.")
                 return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -554,14 +558,14 @@ class MasterAddButton(Button):
 
             # check for lowest free row number
             lowest_available_row = _find_lowest_available_row(self.buttons)
-            logging.debug(f'Lowest available row: {lowest_available_row}')
+            logging.debug(f"Lowest available row: {lowest_available_row}")
             if lowest_available_row is not None:
                 button_row = lowest_available_row
             else:
                 logging.warning("⚠ All rows are full! Can't add any more buttons.")
                 embed = discord.Embed(
                     description="❌ Couldn't find any free rows to add a button to. Maximum is 4 rows of 5 buttons.",
-                    color=constants.EMBED_COLOUR_ERROR
+                    color=constants.EMBED_COLOUR_ERROR,
                 )
                 embed.set_footer(text="You can dismiss this message.")
                 return await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -570,10 +574,10 @@ class MasterAddButton(Button):
             logging.debug("⏳ Generating UUID and defining new button_data...")
             unique_id = str(uuid.uuid4())
             button_data_info_dict = {
-                'message': self.button_data.message,
-                'preview_message': self.button_data.preview_message,
-                'unique_id': unique_id,
-                'button_row': button_row
+                "message": self.button_data.message,
+                "preview_message": self.button_data.preview_message,
+                "unique_id": unique_id,
+                "button_row": button_row,
             }
             button_data = RoleButtonData(button_data_info_dict)
             logging.debug(button_data)
@@ -588,7 +592,10 @@ class MasterAddButton(Button):
                 view.add_item(button)
 
             view.add_item(MasterCancelButton())
-            if len(self.buttons) < 20: view.add_item(MasterAddButton(self.buttons, self.button_data)) # only add this if there's room for more buttons
+            if len(self.buttons) < 20:
+                view.add_item(
+                    MasterAddButton(self.buttons, self.button_data)
+                )  # only add this if there's room for more buttons
             view.add_item(MasterCommitButton(self.buttons, button_data))
 
             logging.debug("▶ Updating message with view.")
@@ -610,10 +617,10 @@ class DeleteButton(Button):
         self.spamchannel = bot.get_channel(channel_botspam())
         super().__init__(
             label="",
-            emoji='💥',
+            emoji="💥",
             style=discord.ButtonStyle.danger,
             custom_id="delete_button",
-            row=1
+            row=1,
             # row=1 if self.index == 2 or self.index == 3 else 0
         )
 
@@ -626,7 +633,7 @@ class DeleteButton(Button):
 
             logging.debug("▶ Deleting button interface.")
             await interaction.delete_original_response()
-        
+
         except Exception as e:
             logging.exception(e)
             try:
@@ -634,17 +641,13 @@ class DeleteButton(Button):
             except Exception as e:
                 await on_generic_error(self.spamchannel, interaction, e)
 
+
 class PrevButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
         self.index = index
         self.buttons = buttons
         self.button_data = button_data
-        super().__init__(
-            label="◄",
-            style=discord.ButtonStyle.secondary,
-            custom_id="generic_previous_button",
-            row=1
-        )
+        super().__init__(label="◄", style=discord.ButtonStyle.secondary, custom_id="generic_previous_button", row=1)
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received ◄ generic_previous_button click")
@@ -658,17 +661,13 @@ class PrevButton(Button):
             # update message
             await interaction.response.edit_message(embed=embed, view=view)
 
+
 class NextButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
         self.index = index
         self.buttons = buttons
         self.button_data = button_data
-        super().__init__(
-            label="►",
-            style=discord.ButtonStyle.secondary,
-            custom_id="generic_next_button",
-            row=1
-        )
+        super().__init__(label="►", style=discord.ButtonStyle.secondary, custom_id="generic_next_button", row=1)
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received ► generic_next_button click")
@@ -680,13 +679,13 @@ class NextButton(Button):
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
                     return
-        
+
             # check int corresponds to a role on this server
             role = None
-            logging.debug(f'Role is {role}')
+            logging.debug(f"Role is {role}")
             role = await check_role_exists(interaction, self.button_data.role_id)
 
-            if role == None: 
+            if role == None:
                 try:
                     raise CustomError(f"Can't find a role with ID `{self.button_data.role_id}`.")
                 except Exception as e:
@@ -697,8 +696,8 @@ class NextButton(Button):
 
             # check if we have permission to manage this role
             permission = await button_role_checks(interaction, role, self.button_data)
-            if not permission: return
-
+            if not permission:
+                return
 
         elif self.index == 2:
             if self.button_data.button_action == None:
@@ -734,27 +733,25 @@ class NextButton(Button):
             # update message
             await interaction.response.edit_message(embed=embed, view=view)
 
+
 class CommitButton(Button):
     def __init__(self, index, button_data: RoleButtonData):
         self.index = index
         self.button_data: RoleButtonData = button_data
-        super().__init__(
-            label='✔',
-            style=discord.ButtonStyle.success,
-            custom_id="generic_commit_button",
-            row=1
-        )
+        super().__init__(label="✔", style=discord.ButtonStyle.success, custom_id="generic_commit_button", row=1)
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received ✅ generic_commit_button click")
         # check we have needed input for a full button
-        if self.button_data.button_label == DEFAULT_BUTTON_LABEL or \
-           self.button_data.role_id == None or \
-           self.button_data.role_object == None:
+        if (
+            self.button_data.button_label == DEFAULT_BUTTON_LABEL
+            or self.button_data.role_id == None
+            or self.button_data.role_object == None
+        ):
             logging.warning("Received commit button press but user has not entered all required data")
             embed = discord.Embed(
                 description="❌ You must input all required elements before committing a button.",
-                color=constants.EMBED_COLOUR_ERROR
+                color=constants.EMBED_COLOUR_ERROR,
             )
             embed.set_footer(text="You can dismiss this message.")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -767,17 +764,13 @@ class CommitButton(Button):
             except Exception as e:
                 logging.exception(e)
 
+
 class CallRepositionButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
         self.index = index
         self.buttons = buttons
         self.button_data: RoleButtonData = button_data
-        super().__init__(
-            emoji='🔀',
-            style=discord.ButtonStyle.primary,
-            custom_id="generic_reposition_button",
-            row=1
-        )
+        super().__init__(emoji="🔀", style=discord.ButtonStyle.primary, custom_id="generic_reposition_button", row=1)
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received 🔀 generic_reposition_button click")
@@ -787,17 +780,13 @@ class CallRepositionButton(Button):
         view = RepositionButtonView(self.index, self.buttons, self.button_data)
         await interaction.response.edit_message(embed=embed, view=view)
 
+
 class CallEditButton(Button):
     def __init__(self, index, buttons, button_data: RoleButtonData):
         self.index = index
         self.buttons = buttons
         self.button_data: RoleButtonData = button_data
-        super().__init__(
-            emoji='↩️',
-            style=discord.ButtonStyle.primary,
-            custom_id="generic_editor_button",
-            row=1
-        )
+        super().__init__(emoji="↩️", style=discord.ButtonStyle.primary, custom_id="generic_editor_button", row=1)
 
     async def callback(self, interaction: discord.Interaction):
         logging.debug("Received ↩️ generic_editor_button click")
@@ -806,6 +795,7 @@ class CallEditButton(Button):
         # assign new view
         view = _select_view_from_index(self.index, self.buttons, self.button_data)
         await interaction.response.edit_message(embed=embed, view=view)
+
 
 """
 INDEXED VIEWS
@@ -816,6 +806,8 @@ INDEXED VIEWS
 """
 Page 1: Input role ID
 """
+
+
 class ChooseRoleView(View):
     def __init__(self, buttons, button_data: RoleButtonData):
         super().__init__(timeout=None)
@@ -829,11 +821,8 @@ class ChooseRoleView(View):
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
-        label='Enter Role ID',
-        custom_id='enter_role_id_button',
-        style=discord.ButtonStyle.primary,
-        emoji='🎢',
-        row=0)
+        label="Enter Role ID", custom_id="enter_role_id_button", style=discord.ButtonStyle.primary, emoji="🎢", row=0
+    )
     async def button_enter_role_id(self, interaction, button):
         try:
             await interaction.response.send_modal(EnterRoleIDModal(self.buttons, self.button_data))
@@ -844,9 +833,12 @@ class ChooseRoleView(View):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
+
 """
 Page 2: Confirm role
 """
+
+
 class ConfirmRoleView(View):
     def __init__(self, buttons, button_data: RoleButtonData):
         self.buttons = buttons
@@ -860,13 +852,12 @@ class ConfirmRoleView(View):
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
-        label='Assign role to button',
-        emoji='☑',
+        label="Assign role to button",
+        emoji="☑",
         style=discord.ButtonStyle.primary,
         custom_id="confirm_role_button",
-        row=0
+        row=0,
     )
-
     async def confirm_role_button(self, interaction: discord.Interaction, button):
         logging.debug("Received ✅ confirm_role_button click")
         # increment index by 1
@@ -878,6 +869,8 @@ class ConfirmRoleView(View):
 """
 Page 3: Set button action
 """
+
+
 class ButtonActionView(View):
     def __init__(self, buttons, button_data: RoleButtonData):
         self.buttons = buttons
@@ -890,18 +883,13 @@ class ButtonActionView(View):
         self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
-    @discord.ui.button(
-        label='Give role',
-        custom_id='give_action_button',
-        style=discord.ButtonStyle.success,
-        row=0
-    )
+    @discord.ui.button(label="Give role", custom_id="give_action_button", style=discord.ButtonStyle.success, row=0)
     async def success_style_button(self, interaction: discord.Interaction, button):
         logging.debug("🔘 Chose give_action_button")
         try:
-            self.button_data.button_action = 'give'
+            self.button_data.button_action = "give"
             # set some defaults for a role give button
-            self.button_data.button_label = 'Give Role Button'
+            self.button_data.button_label = "Give Role Button"
             self.button_data.button_style = discord.ButtonStyle.success
 
             # check for conflicts with existing buttons
@@ -921,20 +909,14 @@ class ButtonActionView(View):
                 raise GenericError(e)
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
-        
 
-    @discord.ui.button(
-        label='Take role',
-        custom_id='take_action_button',
-        style=discord.ButtonStyle.danger,
-        row=0
-    )
+    @discord.ui.button(label="Take role", custom_id="take_action_button", style=discord.ButtonStyle.danger, row=0)
     async def primary_style_button(self, interaction: discord.Interaction, button):
         logging.debug("🔘 Chose take_action_button")
         try:
-            self.button_data.button_action = 'take'
+            self.button_data.button_action = "take"
             # set some defaults for a role take button
-            self.button_data.button_label = 'Take Role Button'
+            self.button_data.button_label = "Take Role Button"
             self.button_data.button_style = discord.ButtonStyle.danger
             embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
@@ -948,18 +930,13 @@ class ButtonActionView(View):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
-    @discord.ui.button(
-        label='Toggle role',
-        custom_id='toggle_action_button',
-        style=discord.ButtonStyle.primary,
-        row=0
-    )
+    @discord.ui.button(label="Toggle role", custom_id="toggle_action_button", style=discord.ButtonStyle.primary, row=0)
     async def secondary_style_button(self, interaction: discord.Interaction, button):
         logging.debug("Chose secondary button")
         try:
-            self.button_data.button_action = 'toggle'
+            self.button_data.button_action = "toggle"
             # set some defaults for a role toggle button
-            self.button_data.button_label = 'Toggle Role Button'
+            self.button_data.button_label = "Toggle Role Button"
             self.button_data.button_style = discord.ButtonStyle.primary
             embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
@@ -977,6 +954,8 @@ class ButtonActionView(View):
 """
 Page 4: Set button style
 """
+
+
 class ButtonStyleView(View):
     def __init__(self, buttons, button_data: RoleButtonData):
         self.buttons = buttons
@@ -989,12 +968,7 @@ class ButtonStyleView(View):
         self.add_item(CallRepositionButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
-    @discord.ui.button(
-        label='Success',
-        custom_id='success_style_button',
-        style=discord.ButtonStyle.success,
-        row=0
-    )
+    @discord.ui.button(label="Success", custom_id="success_style_button", style=discord.ButtonStyle.success, row=0)
     async def success_style_button(self, interaction, button):
         logging.debug("Chose green button")
         try:
@@ -1010,14 +984,8 @@ class ButtonStyleView(View):
                 raise GenericError(e)
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
-        
 
-    @discord.ui.button(
-        label='Primary',
-        custom_id='primary_style_button',
-        style=discord.ButtonStyle.primary,
-        row=0
-    )
+    @discord.ui.button(label="Primary", custom_id="primary_style_button", style=discord.ButtonStyle.primary, row=0)
     async def primary_style_button(self, interaction, button):
         logging.debug("Chose primary button")
         try:
@@ -1035,10 +1003,7 @@ class ButtonStyleView(View):
                 await on_generic_error(spamchannel, interaction, e)
 
     @discord.ui.button(
-        label='Secondary',
-        custom_id='secondary_style_button',
-        style=discord.ButtonStyle.secondary,
-        row=0
+        label="Secondary", custom_id="secondary_style_button", style=discord.ButtonStyle.secondary, row=0
     )
     async def secondary_style_button(self, interaction, button):
         logging.debug("Chose secondary button")
@@ -1056,12 +1021,7 @@ class ButtonStyleView(View):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
-    @discord.ui.button(
-        label='Danger',
-        custom_id='danger_style_button',
-        style=discord.ButtonStyle.danger,
-        row=0
-    )
+    @discord.ui.button(label="Danger", custom_id="danger_style_button", style=discord.ButtonStyle.danger, row=0)
     async def danger_style_button(self, interaction, button):
         logging.debug("Chose danger button")
         try:
@@ -1078,9 +1038,12 @@ class ButtonStyleView(View):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
 
+
 """
 Page 5: Set label/emoji
 """
+
+
 class LabelEmojiView(View):
     def __init__(self, buttons, button_data: RoleButtonData):
         self.buttons = buttons
@@ -1094,11 +1057,7 @@ class LabelEmojiView(View):
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
     @discord.ui.button(
-        label='Enter Label & Emoji',
-        custom_id='label_emoji_button',
-        style=discord.ButtonStyle.primary,
-        emoji='🏷',
-        row=0
+        label="Enter Label & Emoji", custom_id="label_emoji_button", style=discord.ButtonStyle.primary, emoji="🏷", row=0
     )
     async def label_emoji_button(self, interaction: discord.Interaction, button):
         logging.debug("🔘 Received label_emoji_button click")
@@ -1109,6 +1068,8 @@ class LabelEmojiView(View):
 """
 Reposition Page (index = 6)
 """
+
+
 class RepositionButtonView(View):
     def __init__(self, index, buttons, button_data: RoleButtonData):
         self.buttons = buttons
@@ -1121,65 +1082,47 @@ class RepositionButtonView(View):
         self.add_item(CallEditButton(self.index, self.buttons, self.button_data))
         self.add_item(NextButton(self.index, self.buttons, self.button_data))
 
-    @discord.ui.button(
-        custom_id='move_left_button',
-        style=discord.ButtonStyle.primary,
-        emoji='◀',
-        row=0
-    )
+    @discord.ui.button(custom_id="move_left_button", style=discord.ButtonStyle.primary, emoji="◀", row=0)
     async def move_left_button(self, interaction: discord.Interaction, button):
         logging.debug(f"🔘 Received move_left_button click")
 
-        action = 'left'
+        action = "left"
 
         await _reposition_button(interaction, self.buttons, self.button_data, action)
         await interaction.response.defer()
 
-    @discord.ui.button(
-        custom_id='move_right_button',
-        style=discord.ButtonStyle.primary,
-        emoji='▶',
-        row=0
-    )
+    @discord.ui.button(custom_id="move_right_button", style=discord.ButtonStyle.primary, emoji="▶", row=0)
     async def move_right_button(self, interaction: discord.Interaction, button):
         logging.debug(f"🔘 Received move_right_button click")
 
-        action = 'right'
+        action = "right"
 
         await _reposition_button(interaction, self.buttons, self.button_data, action)
         await interaction.response.defer()
 
-    @discord.ui.button(
-        custom_id='move_up_button',
-        style=discord.ButtonStyle.primary,
-        emoji='🔼',
-        row=0
-    )
+    @discord.ui.button(custom_id="move_up_button", style=discord.ButtonStyle.primary, emoji="🔼", row=0)
     async def move_up_button(self, interaction: discord.Interaction, button):
         logging.debug(f"🔘 Received move_up_button click")
 
-        action = 'up'
+        action = "up"
 
         await _reposition_button(interaction, self.buttons, self.button_data, action)
         await interaction.response.defer()
 
-    @discord.ui.button(
-        custom_id='move_down_button',
-        style=discord.ButtonStyle.primary,
-        emoji='🔽',
-        row=0
-    )
+    @discord.ui.button(custom_id="move_down_button", style=discord.ButtonStyle.primary, emoji="🔽", row=0)
     async def move_down_button(self, interaction: discord.Interaction, button):
         logging.debug(f"🔘 Received move_down_button click")
 
-        action = 'down'
+        action = "down"
 
         await _reposition_button(interaction, self.buttons, self.button_data, action)
         await interaction.response.defer()
+
 
 """
 After buttons sent view
 """
+
 
 class StressButtonView(View):
     def __init__(self, button_data):
@@ -1187,13 +1130,8 @@ class StressButtonView(View):
         super().__init__(timeout=None)
 
     @discord.ui.button(
-        label='That was stressful',
-        style=discord.ButtonStyle.danger,
-        custom_id="stress_button",
-        emoji='😰',
-        row=0
+        label="That was stressful", style=discord.ButtonStyle.danger, custom_id="stress_button", emoji="😰", row=0
     )
-
     async def stress_button(self, interaction: discord.Interaction, button):
         logging.debug("Received stress_button click")
         try:
@@ -1203,13 +1141,8 @@ class StressButtonView(View):
             await interaction.followup.send(embed=embed, ephemeral=True)
 
     @discord.ui.button(
-        label='I\'m amazing!',
-        style=discord.ButtonStyle.success,
-        custom_id="amazing_button",
-        emoji='💪',
-        row=0
+        label="I'm amazing!", style=discord.ButtonStyle.success, custom_id="amazing_button", emoji="💪", row=0
     )
-
     async def amazing_button(self, interaction: discord.Interaction, button):
         logging.debug("Received amazing_button click")
         try:
@@ -1218,13 +1151,16 @@ class StressButtonView(View):
         except:
             await interaction.followup.send(embed=embed, ephemeral=True)
 
+
 """
 MODALS
 
 """
+
+
 # modal to input role ID
 class EnterRoleIDModal(Modal):
-    def __init__(self, buttons, button_data: RoleButtonData, title = 'Set Role', timeout = None):
+    def __init__(self, buttons, button_data: RoleButtonData, title="Set Role", timeout=None):
         self.buttons = buttons
         self.button_data = button_data
         self.index = 0
@@ -1235,39 +1171,38 @@ class EnterRoleIDModal(Modal):
         super().__init__(title=title, timeout=timeout)
 
     role_id = discord.ui.TextInput(
-        label='Enter Role ID',
-        placeholder='e.g. 800091021852803072',
-        required=True,
-        max_length=24
+        label="Enter Role ID", placeholder="e.g. 800091021852803072", required=True, max_length=24
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         # remove anything that isn't a number
         str_role_id = self.role_id.value
-        int_role_id = re.sub(r'[^0-9]', '', str_role_id)
+        int_role_id = re.sub(r"[^0-9]", "", str_role_id)
 
         # try to convert to int
         try:
             self.button_data.role_id = int(int_role_id)
-            logging.debug(f'Stored Role ID: {self.button_data.role_id}')
+            logging.debug(f"Stored Role ID: {self.button_data.role_id}")
         except ValueError as e:
             try:
                 raise GenericError(e)
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
             return
-        
+
         # check int corresponds to a role on this server
         role: discord.Role = None
-        logging.debug(f'Role is {role}')
+        logging.debug(f"Role is {role}")
         role = await check_role_exists(interaction, self.button_data.role_id)
-        if role == None: return # stop here if there's no valid role
+        if role == None:
+            return  # stop here if there's no valid role
 
         self.button_data.role_object = role
 
         # check if we have permission to manage this role
         permission = await button_role_checks(interaction, role, self.button_data)
-        if not permission: return
+        if not permission:
+            return
 
         embed, view = _increment_index(self.index, self.buttons, self.button_data)
 
@@ -1275,19 +1210,20 @@ class EnterRoleIDModal(Modal):
         logging.debug("Updating message with new embed and view...")
         await interaction.response.edit_message(embed=embed, view=view)
 
+
 # modal to input button label/emoji
 class EnterLabelEmojiModal(Modal):
-    def __init__(self, buttons, button_data: RoleButtonData, title = 'Set Label & Emoji', timeout = None):
+    def __init__(self, buttons, button_data: RoleButtonData, title="Set Label & Emoji", timeout=None):
         self.buttons = buttons
         self.button_data = button_data
         self.index = 4
         if self.button_data.button_label:
-            logging.debug(f'Default set to {self.button_data.button_label}')
+            logging.debug(f"Default set to {self.button_data.button_label}")
             self.button_label.default = str(self.button_data.button_label)
         else:
             self.button_label.default = None
         if self.button_data.button_emoji:
-            logging.debug(f'Default set to {self.button_data.button_emoji}')
+            logging.debug(f"Default set to {self.button_data.button_emoji}")
             self.button_emoji.default = str(self.button_data.button_emoji)
         else:
             self.button_emoji.default = None
@@ -1295,18 +1231,18 @@ class EnterLabelEmojiModal(Modal):
         super().__init__(title=title, timeout=timeout)
 
     button_label = discord.ui.TextInput(
-        label='Label',
-        placeholder='The text that will appear on your button.',
+        label="Label",
+        placeholder="The text that will appear on your button.",
         style=discord.TextStyle.short,
         required=False,
-        max_length=80
+        max_length=80,
     )
     button_emoji = discord.ui.TextInput(
-        label='Emoji',
-        placeholder='The emoji that will appear on your button.',
+        label="Emoji",
+        placeholder="The emoji that will appear on your button.",
         style=discord.TextStyle.short,
         required=False,
-        max_length=60
+        max_length=60,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -1316,51 +1252,61 @@ class EnterLabelEmojiModal(Modal):
             except Exception as e:
                 await on_generic_error(spamchannel, interaction, e)
             return
-        
+
         if self.button_label.value == "":
             logging.debug("🔴 Received empty string for Label")
             self.button_data.button_label = None
-        else: 
+        else:
             self.button_data.button_label = self.button_label
 
-        logging.debug(f'Button label set: {self.button_data.button_label}')
+        logging.debug(f"Button label set: {self.button_data.button_label}")
 
         if self.button_emoji.value == "":
             logging.debug("🔴 Received empty string for Emoji")
             self.button_data.button_emoji = None
         else:
             # check if user has entered Discord emoji
-            if ':' in self.button_emoji.value and not '<' in self.button_emoji.value:
-                logging.debug(f"⏳ User seems to have entered Discord emoji as {self.button_emoji.value}, attempting to resolve against library...")
+            if ":" in self.button_emoji.value and not "<" in self.button_emoji.value:
+                logging.debug(
+                    f"⏳ User seems to have entered Discord emoji as {self.button_emoji.value}, attempting to resolve against library..."
+                )
                 unicode_emoji = emoji.emojize(self.button_emoji.value)
                 logging.debug(f"Updated emoji: {unicode_emoji}")
                 self.button_data.button_emoji = str(unicode_emoji)
             else:
                 self.button_data.button_emoji = str(self.button_emoji.value)
 
-            if ':' in self.button_data.button_emoji and not '<' in self.button_data.button_emoji: # triggered if we failed to convert a : to an emoji and its not custom
+            if (
+                ":" in self.button_data.button_emoji and not "<" in self.button_data.button_emoji
+            ):  # triggered if we failed to convert a : to an emoji and its not custom
                 logging.debug("Found Discord non-custom code in emoji value")
                 try:
-                    error = f'**Could not resolve the emoji you entered against its unicode name**.\n' \
-                            'Not all Discord emojis have the same shortcode as the unicode name, for example `:heart:` in Discord is `:red_heart:` in unicode.\n' \
-                            'You can try sending the emoji you want in a message, then copying the emoji from that message.'
-                    raise CustomError(error)
-                except Exception as e:
-                    await on_generic_error(spamchannel, interaction, e)
-                return
-            
-            elif emoji.emoji_count(self.button_data.button_emoji) > 1: # should trigger if we have a ZWJ emoji or too many emojis
-                logging.debug("number of emojis in input is not 1")
-                try:
-                    error = f'The emoji you entered does not seem to be valid: {self.button_data.button_emoji}\n' \
-                             'It may be a non-standard or unicode-unsupported emoji. ' \
-                             'You can try sending the emoji you want in a message, then copying the emoji from that message.'
+                    error = (
+                        f"**Could not resolve the emoji you entered against its unicode name**.\n"
+                        "Not all Discord emojis have the same shortcode as the unicode name, for example `:heart:` in Discord is `:red_heart:` in unicode.\n"
+                        "You can try sending the emoji you want in a message, then copying the emoji from that message."
+                    )
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
                 return
 
-        logging.debug(f'Button emoji set: {self.button_data.button_emoji}')
+            elif (
+                emoji.emoji_count(self.button_data.button_emoji) > 1
+            ):  # should trigger if we have a ZWJ emoji or too many emojis
+                logging.debug("number of emojis in input is not 1")
+                try:
+                    error = (
+                        f"The emoji you entered does not seem to be valid: {self.button_data.button_emoji}\n"
+                        "It may be a non-standard or unicode-unsupported emoji. "
+                        "You can try sending the emoji you want in a message, then copying the emoji from that message."
+                    )
+                    raise CustomError(error)
+                except Exception as e:
+                    await on_generic_error(spamchannel, interaction, e)
+                return
+
+        logging.debug(f"Button emoji set: {self.button_data.button_emoji}")
 
         if self.button_data.button_emoji:
             logging.debug("✅ Bot thinks we have an emoji")
@@ -1376,4 +1322,3 @@ class EnterLabelEmojiModal(Modal):
             await interaction.delete_original_response()
         except Exception as e:
             logging.exception(e)
-
