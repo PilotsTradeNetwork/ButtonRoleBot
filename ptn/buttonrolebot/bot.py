@@ -9,6 +9,7 @@ Dependencies: Constants, Metadata
 # import libraries
 import asyncio
 import re
+import logging
 
 # import discord
 import discord
@@ -37,7 +38,7 @@ i'm so sorry kutu
 """
 class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'button:role:(?P<role_id>[0-9]+):message:(?P<message_id>[0-9]+):action:(?P<action>[a-z]+)'):
     def __init__(self, action: str, role_id: int, message_id: int) -> None:
-        print("DynamicButton init")
+        logging.debug("DynamicButton init")
         super().__init__(
             discord.ui.Button(
                 label='Assign Role',
@@ -53,15 +54,15 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
     # This is called when the button is clicked and the custom_id matches the template.
     @classmethod
     async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /):
-        print("DynamicButton: from_custom_id called")
+        logging.debug("DynamicButton: from_custom_id called")
         action = str(match['action']) if match else 'toggle'
         role_id = int(match['role_id'])
         message_id = int(match['message_id'])
         return cls(action, role_id, message_id)
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        print("DynamicButton: callback from:")
-        print(f'action:{self.action}:message:{self.message_id}:role:{self.role_id}')
+        logging.debug("DynamicButton: callback from:")
+        logging.debug(f'action:{self.action}:message:{self.message_id}:role:{self.role_id}')
 
         embed = discord.Embed(
             description="⏳ Processing...",
@@ -75,7 +76,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
 
         async def manage_user_role():
             try:
-                print(f"Spamchannel is {spamchannel}")
+                logging.debug(f"Spamchannel is {spamchannel}")
 
                 # get role object
                 role = discord.utils.get(interaction.guild.roles, id=self.role_id)
@@ -83,7 +84,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                 # check if we have permissions for this role
                 bot_member: discord.Member = await get_member(bot, bot.user.id)
                 if bot_member.top_role <= role or role.managed:
-                    print(f"⚠ We don't have permission for {role}")
+                    logging.warning(f"⚠ We don't have permission for {role}")
                     try:
                         # notify bot-spam
                         message: discord.Message = await interaction.channel.fetch_message(self.message_id)
@@ -95,7 +96,8 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                         content = f'🔔 <@&{role_mod()}>: Button failed to grant role <@&{role.id}>'
                         await spamchannel.send(content=content, embed=embed)
                     except Exception as e:
-                        print(f'Error notifying bot-spam: {e}')
+                        logging.error(f'Error notifying bot-spam: {e}')
+                        logging.exception(e)
 
                     try:
                         # notify user
@@ -105,28 +107,28 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                     return False
 
                 # check if user has it
-                print(f'Check whether user has role: "{role}"')
+                logging.debug(f'Check whether user has role: "{role}"')
                 
                 if role not in interaction.user.roles and self.action != 'take':
-                    print('User doesn\'t have role and action is not take')
+                    logging.debug('User doesn\'t have role and action is not take')
                     # rolercoaster giveth
                     await interaction.user.add_roles(role)
-                    print(f'➕ Gave {interaction.user} the {role} role')
+                    logging.debug(f'➕ Gave {interaction.user} the {role} role')
                     adverb = "now"
 
                 elif role in interaction.user.roles and self.action != 'give':
-                    print('User has role and action is not give')
+                    logging.debug('User has role and action is not give')
                     # ...and rolercoaster taketh away
                     await interaction.user.remove_roles(role)
-                    print(f'➖ Removed {interaction.user} from the {role} role')
+                    logging.debug(f'➖ Removed {interaction.user} from the {role} role')
                     adverb = "no longer"
 
                 elif role not in interaction.user.roles and self.action == 'take':
-                    print('No action required: user hasn\'t got role and action is take')
+                    logging.debug('No action required: user hasn\'t got role and action is take')
                     adverb = 'don\'t'
 
                 elif role in interaction.user.roles and self.action == 'give':
-                    print('No action required: user already has role and action is give')
+                    logging.debug('No action required: user already has role and action is give')
                     adverb = 'already'
 
                 embed = discord.Embed(
@@ -137,7 +139,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                 await interaction.edit_original_response(embed=embed)
 
             except Forbidden as e:
-                print(e)
+                logging.exception(e)
                 try:
                     # notify bot-spam
                     message: discord.Message = await interaction.channel.fetch_message(self.message_id)
@@ -148,9 +150,10 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                     embed.set_footer(text=e)
                     await spamchannel.send(embed=embed)
                 except Exception as e:
-                    print(f'Error notifying bot-spam: {e}')
+                    logging.error(f'Error notifying bot-spam: {e}')
+                    logging.exception(e)
 
-                print("Raising error for user")
+                logging.debug("Raising error for user")
                 # raise error
                 try:
                     error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
@@ -160,7 +163,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                 return 
 
             except Exception as e:
-                print(e)
+                logging.exception(e)
                 try:
                     # notify bot-spam
                     message: discord.Message = await interaction.channel.fetch_message(self.message_id)
@@ -170,9 +173,10 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                     )
                     await spamchannel.send(embed=embed)
                 except Exception as e:
-                    print(f'Error notifying bot-spam: {e}')
+                    logging.error(f'Error notifying bot-spam: {e}')
+                    logging.exception(e)
 
-                print("Raising error for user")
+                logging.debug("Raising error for user")
                 # raise error
                 try:
                     error = f"Role <@&{role.id}> not granted. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance."
@@ -185,7 +189,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
             await asyncio.wait_for(manage_user_role(), timeout=timeout)
 
         except asyncio.TimeoutError: # TODO move to error handler
-            print("User role management timed out")
+            logging.error("User role management timed out")
             # notify user
             embed = discord.Embed(
                 description=f"❌ Timed out. Please contact a member of the <@&{role_mod()}> team or <@&{role_council()}> for assistance.",
@@ -203,7 +207,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
             await spamchannel.send(embed=embed)
 
         except Exception as e:
-            print(e)
+            logging.exception(e)
 
 
 """
@@ -228,9 +232,7 @@ class ButtonRoleBot(commands.Bot):
     async def on_ready(self):
         try:
             # TODO: this should be moved to an on_setup hook
-            print('-----')
-            print(f'{bot.user.name} version: {__version__} has connected to Discord!')
-            print('-----')
+            logging.info(f'{bot.user.name} version: {__version__} has connected to Discord!')
             devchannel = bot.get_channel(channel_botdev())
             global spamchannel
             spamchannel = bot.get_channel(channel_botspam())
@@ -242,12 +244,10 @@ class ButtonRoleBot(commands.Bot):
             await devchannel.send(embed=embed)
 
         except Exception as e:
-            print(e)
+            logging.exception(e)
 
     async def on_disconnect(self):
-        print('-----')
-        print(f'🔌ButtonRoleBot has disconnected from discord server, version: {__version__}.')
-        print('-----')
+        logging.info(f'🔌ButtonRoleBot has disconnected from discord server, version: {__version__}.')
 
 
 bot = ButtonRoleBot()

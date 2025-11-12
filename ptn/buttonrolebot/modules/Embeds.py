@@ -10,6 +10,7 @@ Error Handling should be dealt with from calling functions
 # import libraries
 import json
 import random
+import logging
 
 # import discord
 import discord
@@ -24,54 +25,54 @@ from ptn.buttonrolebot.classes.EmbedData import EmbedData
 
 # convert hex color to int
 async def _color_hex_to_int(color_input):
-    print(color_input)
+    logging.debug(color_input)
     if type(color_input) != int:
         color_input = str(color_input)
         if color_input.startswith('#'): # check if we have an HTML color code
-            print(f"Received web color code with #: {color_input}, stripping leading #...")
+            logging.debug(f"Received web color code with #: {color_input}, stripping leading #...")
             color_input = color_input.lstrip('#')
-            print(f"New value: {color_input}")
+            logging.debug(f"New value: {color_input}")
 
         color_int = int(color_input, 16)  # Convert hex string to integer
-        print(f'Converted {color_input} to {color_int}')
+        logging.debug(f'Converted {color_input} to {color_int}')
 
         return color_int
 
     else:
-        print("Received int, passing value through: %s" % (color_input))
+        logging.debug("Received int, passing value through: %s" % (color_input))
         return color_input
 
 
 # generate an embed from a dict
 async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
-    print("Called _generate_embed_from_dict")
-    print(embed_data)
+    logging.debug("Called _generate_embed_from_dict")
+    logging.debug(embed_data)
 
     # Populate the embed with values from embed_data
 
     # load JSON
     # convert str to dict if needed
     if type(embed_data.embed_json) == str:
-        print("Received JSON in string format.")
+        logging.debug("Received JSON in string format.")
         # embed_data.embed_json = embed_data.embed_json.replace('\'', '\"')
         embed_json: dict = json.loads(embed_data.embed_json)
     else:
         embed_json: dict = embed_data.embed_json
 
-    print('embed_json type: %s' % (type(embed_json)))
+    logging.debug('embed_json type: %s' % (type(embed_json)))
 
     if not from_json:
-        print("▶ Add title")
+        logging.debug("▶ Add title")
         if embed_data.embed_title:
             embed_json["title"] = embed_data.embed_title
         else:
             if "title" in embed_json: del embed_json["title"]
 
-        print("▶ Add description")
+        logging.debug("▶ Add description")
         if embed_data.embed_description:
             embed_json["description"] = embed_data.embed_description
 
-        print("▶ Add footer")
+        logging.debug("▶ Add footer")
         footer_dict = embed_json.get("footer", {})
         if embed_data.embed_footer:
             footer_dict["text"] = embed_data.embed_footer
@@ -80,7 +81,7 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
         if footer_dict:
             embed_json["footer"] = footer_dict
 
-        print("▶ Add image")
+        logging.debug("▶ Add image")
         image_dict = embed_json.get("image", {})
         if embed_data.embed_image_url:
             image_dict["url"] = embed_data.embed_image_url
@@ -89,7 +90,7 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
         if image_dict:
             embed_json["image"] = image_dict
 
-        print("▶ Add thumbnail")
+        logging.debug("▶ Add thumbnail")
         thumbnail_dict = embed_json.get("thumbnail", {})
         if embed_data.embed_thumbnail_url:
             thumbnail_dict["url"] = embed_data.embed_thumbnail_url
@@ -98,7 +99,7 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
         if thumbnail_dict:
             embed_json["thumbnail"] = thumbnail_dict
 
-        print("▶ Add author")
+        logging.debug("▶ Add author")
         author_dict = embed_json.get("author", {})
         if embed_data.embed_author_name:
             author_dict["name"] = embed_data.embed_author_name
@@ -111,24 +112,24 @@ async def _generate_embed_from_dict(embed_data: EmbedData, from_json = False):
         if author_dict:
             embed_json["author"] = author_dict
 
-        print("▶ Set color")
+        logging.debug("▶ Set color")
         if embed_data.embed_color:
             color = await _color_hex_to_int(embed_data.embed_color)
             embed_json["color"] = color
         else:
             if "color" in embed_json: del embed_json["color"]
 
-        print("✅ Finished updating dict.")
+        logging.info("✅ Finished updating dict.")
 
 
-    print("⌛ Populating embed from JSON")
+    logging.info("⌛ Populating embed from JSON")
     embed = discord.Embed.from_dict(embed_json)
 
-    print("✅ Completed.")
+    logging.info("✅ Completed.")
     return embed
 
 def button_config_embed(index, button_data: RoleButtonData):
-    print("called button_config_embed")
+    logging.debug("called button_config_embed")
     message: discord.Message = button_data.message
 
     if index < 5:
@@ -142,7 +143,7 @@ def button_config_embed(index, button_data: RoleButtonData):
     embed.set_footer(text=footer)
 
     if index == 0:
-        print("Returning embed for index 0")
+        logging.debug("Returning embed for index 0")
         # embed.title="ADD ROLE BUTTON TO MESSAGE"
         embed.description = \
             ':one: :rocket: **Enter the ROLE ID of the role you wish the button to add/remove**.\n\n' \
@@ -154,7 +155,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 1:
-        print("Returning embed for index 1")
+        logging.debug("Returning embed for index 1")
         # embed.title="CONFIRM BUTTON ROLE"
         embed.set_thumbnail(url=BUTTON_SWEAT_THUMBNAIL)
         embed.description = \
@@ -164,7 +165,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 2:
-        print("Returning embed for index 2")
+        logging.debug("Returning embed for index 2")
         # embed.title="BUTTON STYLE"
         embed.description = \
             f':three: 🛠 **CHOOSE what you want your button to DO**:'
@@ -172,7 +173,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 3:
-        print("Returning embed for index 3")
+        logging.debug("Returning embed for index 3")
         # embed.title="BUTTON STYLE"
         embed.description = \
             f':four: :art: **CHOOSE which STYLE OF BUTTON you want to add**.'
@@ -180,7 +181,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
     
     elif index == 4:
-        print("Returning embed for index 4")
+        logging.debug("Returning embed for index 4")
         # embed.title="LABEL & EMOJI"
         embed.description = \
             f':five: :label: **Choose your button\'s LABEL and/or EMOJI**.\n\n' \
@@ -193,7 +194,7 @@ def button_config_embed(index, button_data: RoleButtonData):
         return embed
 
     elif index == 5:
-        print("Returning embed for index 5")
+        logging.debug("Returning embed for index 5")
         # embed.title="LABEL & EMOJI"
         embed.description = \
             f':twisted_rightwards_arrows: **REPOSITION your button** .\n\n' \
@@ -206,7 +207,7 @@ def button_config_embed(index, button_data: RoleButtonData):
 
 
 def stress_embed():
-    print("called stress_embed")
+    logging.debug("called stress_embed")
     # attach a random image from the "there, there" category
     gif = random.choice(STRESS_GIFS)
 
@@ -219,7 +220,7 @@ def stress_embed():
 
 
 def amazing_embed():
-    print("called amazing_embed")
+    logging.debug("called amazing_embed")
     # attach a random image from the "there, there" category
     gif = random.choice(AMAZING_GIFS)
 

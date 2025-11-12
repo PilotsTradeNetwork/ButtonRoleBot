@@ -11,6 +11,7 @@ Dependends on: constants
 import discord
 from discord import Interaction, app_commands
 from discord.app_commands import AppCommandError
+import logging
 
 # import local constants
 import ptn.buttonrolebot.constants as constants
@@ -38,7 +39,7 @@ class GenericError(Exception): # generic error
 
 class BadRequestError(Exception): # 400 Bad Request from HTTPException
     def __init__(self, exception):
-        print("Received BadRequestError def init")
+        logging.error("Received BadRequestError def init")
     pass
 
 class CustomError(Exception): # an error handler that hides the Exception text from the user, but shows custom text sent from the source instead
@@ -53,11 +54,11 @@ A primitive global error handler for all app commands (slash & ctx menus)
 
 returns: the error message to the user and log
 """
-async def on_generic_error(
-    spamchannel, 
-    interaction: Interaction,
-    error
-): # an error handler for our custom errors
+async def on_generic_error(spamchannel, interaction: Interaction, error):
+    """
+        an error handler for our custom errors
+    """
+
     try: # this outputs the error to bot-spam for logging purposes
         spam_embed = discord.Embed(
             description=f"Error from `{interaction.command.name}` in <#{interaction.channel.id}> called by <@{interaction.user.id}>: ```{error}```",
@@ -65,7 +66,7 @@ async def on_generic_error(
         )
         await spamchannel.send(embed=spam_embed)
     except Exception as e:
-        print(e)
+        logging.exception(e)
         try:
             spam_embed = discord.Embed(
                 description=f"Error from `{interaction}` in <#{interaction.channel.id}> called by <@{interaction.user.id}>: ```{error}```",
@@ -73,18 +74,18 @@ async def on_generic_error(
             )
             await spamchannel.send(embed=spam_embed)
         except Exception as e:
-            print(e)
+            logging.exception(e)
 
     if isinstance(error, BadRequestError): # 400 Bad Request from HTTPException
-        print(f"Received HTTPException: {error}")
+        logging.error(f"Received HTTPException: {error}")
 
         if "emoji" in str(error): # emoji is invalid
-            print("Error caused by invalid emoji")
+            logging.info("Error caused by invalid emoji")
             message = '**Emoji Error**\n\nSorry, the emoji you chose is not recognised by Discord as a valid emoji.\n\n' \
                       'Some emojis are based on complex ZWJ sequences and may not be fully supported by all platforms.\n\n' \
                       'You can try picking your desired emoji from Discord\'s (non-custom) emoji selector, sending it in a message, and copying the result.'
         elif "custom id" in str(error): # duplicate custom id
-            print("Error caused by duplicate custom id")
+            logging.info("Error caused by duplicate custom id")
             message = 'This message already appears to have a button associated with that role.'
         else: # dunno lol
             message = error
@@ -99,7 +100,7 @@ async def on_generic_error(
             await interaction.followup.send(embed=embed, ephemeral=True)
 
     if isinstance(error, GenericError): # Our bog-standard "hey, an error!" response. Just displays the raw error text to the user without explanation
-        print(f"Generic error raised: {error}")
+        logging.error(f"Generic error raised: {error}")
         embed = discord.Embed(
             description=f"❌ {error}",
             color=constants.EMBED_COLOUR_ERROR
@@ -112,7 +113,7 @@ async def on_generic_error(
     elif isinstance(error, CustomError): # this class receives custom error messages and displays either privately or publicly
         message = error.message
         isprivate = error.isprivate
-        print(f"Raised CustomError from {error} with message {message}")
+        logging.error(f"Raised CustomError from {error} with message {message}")
         embed = discord.Embed(
             description=f"❌ {message}",
             color=constants.EMBED_COLOUR_ERROR
@@ -129,18 +130,19 @@ async def on_generic_error(
                 await interaction.followup.send(embed=embed)
 
     else:
-        print(f"Error {error} was not caught by on_generic_error")
+        logging.error(f"Error {error} was not caught by on_generic_error")
 
 
-async def on_app_command_error(
-    interaction: Interaction,
-    error: AppCommandError
-): # an error handler for discord.py errors
-    print(f"Error from {interaction.command.name} in {interaction.channel.name} called by {interaction.user.display_name}: {error}")
+async def on_app_command_error(interaction: Interaction, error: AppCommandError):
+    """
+        an error handler for discord.py errors
+    """
+
+    logging.error(f"Error from {interaction.command.name} in {interaction.channel.name} called by {interaction.user.display_name}: {error}")
 
     try:
         if isinstance(error, CommandChannelError):
-            print("Channel check error raised")
+            logging.info("Channel check error raised")
             formatted_channel_list = error.formatted_channel_list
 
             embed=discord.Embed(
@@ -150,7 +152,7 @@ async def on_app_command_error(
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         elif isinstance(error, CommandRoleError):
-            print("Role check error raised")
+            logging.info("Role check error raised")
             permitted_roles = error.permitted_roles
             formatted_role_list = error.formatted_role_list
             if len(permitted_roles)>1:
@@ -163,7 +165,7 @@ async def on_app_command_error(
                     description=f"**Permission denied**: You need the following role to use this command:\n{formatted_role_list}",
                     color=constants.EMBED_COLOUR_ERROR
                 )
-            print("notify user")
+            logging.debug("notify user")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         elif isinstance(error, CommandPermissionError):
@@ -179,7 +181,7 @@ async def on_app_command_error(
         elif isinstance(error, CustomError):
             message = error.message
             isprivate = error.isprivate
-            print(f"Raised CustomError from {error} with message {message}")
+            logging.error(f"Raised CustomError from {error} with message {message}")
             embed = discord.Embed(
                 description=f"❌ {message}",
                 color=constants.EMBED_COLOUR_ERROR
@@ -196,7 +198,7 @@ async def on_app_command_error(
                     await interaction.followup.send(embed=embed)
 
         elif isinstance(error, GenericError):
-            print(f"Generic error raised: {error}")
+            logging.error(f"Generic error raised: {error}")
             embed = discord.Embed(
                 description=f"❌ {error}",
                 color=constants.EMBED_COLOUR_ERROR
@@ -207,7 +209,7 @@ async def on_app_command_error(
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         else:
-            print("Othertype error message raised")
+            logging.error("Othertype error message raised")
             embed = discord.Embed(
                 description=f"❌ Unhandled Error: {error}",
                 color=constants.EMBED_COLOUR_ERROR
@@ -218,4 +220,5 @@ async def on_app_command_error(
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
     except Exception as e:
-        print(f"An error occurred in the error handler (lol): {e}")
+        logging.error(f"An error occurred in the error handler (lol): {e}")
+        logging.exception(e)

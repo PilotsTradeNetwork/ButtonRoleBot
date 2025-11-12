@@ -6,6 +6,7 @@ A discord.ui element for removing buttons added by BRB.
 import discord
 from discord.interactions import Interaction
 from discord.ui import View, Modal, Button
+import logging
 
 # import bot
 from ptn.buttonrolebot.bot import bot
@@ -32,7 +33,7 @@ class ConfirmRemoveButtonsView(View):
         style=discord.ButtonStyle.secondary,
     )
     async def cancel_remove_button(self, interaction: discord.Interaction, button):
-        print(f"User cancelled button removal from {self.message}")
+        logging.debug(f"User cancelled button removal from {self.message}")
         embed = discord.Embed(
             description='❎ **Cancelled**.',
             color=constants.EMBED_COLOUR_OK
@@ -48,12 +49,12 @@ class ConfirmRemoveButtonsView(View):
     )
 
     async def confirm_remove_button(self, interaction: discord.Interaction, button):
-        print(f"User confirmed button removal from {self.message}")
+        logging.debug(f"User confirmed button removal from {self.message}")
         try:
-            print("Removing the view")
+            logging.debug("Removing the view")
             await self.message.edit(view=None)
 
-            print("Notifying bot-spam")
+            logging.debug("Notifying bot-spam")
             spamchannel = bot.get_channel(channel_botspam())
       
             embed = discord.Embed(
@@ -63,7 +64,7 @@ class ConfirmRemoveButtonsView(View):
 
             await spamchannel.send(embed=embed)
 
-            print("Notifying user")
+            logging.debug("Notifying user")
             embed = discord.Embed(
                 description=f'✅ **Buttons removed from {self.message.jump_url}**.',
                 color=constants.EMBED_COLOUR_OK
@@ -73,6 +74,7 @@ class ConfirmRemoveButtonsView(View):
             await interaction.response.edit_message(embed=embed, view=None)
 
         except Exception as e:
+            logging.exception(e)
             try:
                 raise GenericError(e)
             except Exception as e:

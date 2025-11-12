@@ -5,6 +5,7 @@ Our main Cog for BRB commands.
 
 # discord.py
 import discord
+import logging
 from discord.ext import commands
 
 # import bot
@@ -29,7 +30,7 @@ returns: error message to user and log
 
 @bot.listen()
 async def on_command_error(ctx, error):
-    print(error)
+    logging.error(error)
     if isinstance(error, commands.BadArgument):
         message=f'Bad argument: {error}'
 
@@ -87,7 +88,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='ping', aliases=['hello', 'ehlo', 'helo'], help='Use to check if BRB is online and responding.')
     @commands.has_any_role(*constants.any_elevated_role)
     async def ping(self, ctx):
-        print(f"{ctx.author} used PING in {ctx.channel.name}")
+        logging.info(f"{ctx.author} used PING in {ctx.channel.name}")
         embed = discord.Embed(
             title="🟢 BUTTON ROLE BOT ONLINE",
             description=f"🎢<@{bot.user.id}> connected, version **{__version__}**.",
@@ -100,13 +101,14 @@ class AdminCommands(commands.Cog):
     @commands.command(name='sync', help='Synchronise BRB interactions with server')
     @commands.has_any_role(*constants.any_elevated_role)
     async def sync(self, ctx):
-        print(f"Interaction sync called from {ctx.author.display_name}")
+        logging.info(f"Interaction sync called from {ctx.author.display_name}")
         async with ctx.typing():
             try:
                 bot.tree.copy_global_to(guild=constants.guild_obj)
                 await bot.tree.sync(guild=constants.guild_obj)
-                print("Synchronised bot tree.")
+                logging.info("Synchronised bot tree.")
                 await ctx.send("Synchronised bot tree.")
             except Exception as e:
-                print(f"Tree sync failed: {e}.")
+                logging.error(f"Tree sync failed: {e}.")
+                logging.exception(e)
                 return await ctx.send(f"Failed to sync bot tree: {e}")

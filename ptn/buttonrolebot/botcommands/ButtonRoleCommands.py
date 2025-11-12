@@ -8,6 +8,7 @@ import json
 import re
 import traceback
 import uuid
+import logging
 
 # discord.py
 import discord
@@ -47,7 +48,7 @@ returns: error message to user and log
 
 @bot.listen()
 async def on_command_error(ctx, error):
-    print(error)
+    logging.error(error)
     if isinstance(error, commands.BadArgument):
         message=f'Bad argument: {error}'
 
@@ -82,7 +83,7 @@ Uses @bot.tree instead of @command.tree
 @check_roles(any_elevated_role)
 @check_channel_permissions()
 async def remove_role_buttons(interaction: discord.Interaction, message: discord.Message):
-    print(f"Received Remove Buttons context interaction from {interaction.user} in {interaction.channel}")
+    logging.info(f"Received Remove Buttons context interaction from {interaction.user} in {interaction.channel}")
     # check message was sent by bot
     if not message.author == bot.user:
         try:
@@ -107,7 +108,7 @@ async def remove_role_buttons(interaction: discord.Interaction, message: discord
 @check_roles(any_elevated_role)
 @check_channel_permissions()
 async def manage_role_buttons(interaction: discord.Interaction, message: discord.Message):
-    print(f"Received Add Role Button context interaction from {interaction.user} in {interaction.channel}")
+    logging.info(f"Received Add Role Button context interaction from {interaction.user} in {interaction.channel}")
     # check message was sent by bot
     if not message.author == bot.user:
         try:
@@ -129,7 +130,7 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
         embeds = [heading_embed, preview_embed]
 
         # send our preview
-        print("▶ Sending preview message...")
+        logging.debug("▶ Sending preview message...")
         await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
         # define empty list to hold our button_data instances
@@ -140,12 +141,12 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
 
         # check if message has a view already
         if message.components:
-            print("⚠ Existing view found on message, adding its buttons to our edit view.")
+            logging.debug("⚠ Existing view found on message, adding its buttons to our edit view.")
             view = View.from_message(message)
             # use existing buttons to populate button_data and add to buttons
             for child in view.children:
                 if isinstance(child, discord.ui.Button):
-                    print(f"Found button: {child.emoji} {child.label} | {child.custom_id}")
+                    logging.debug(f"Found button: {child.emoji} {child.label} | {child.custom_id}")
                     unique_id = str(uuid.uuid4()) # generate a unique ID for each button_data instance
 
                     # use re to extract role ID and action from custom ID
@@ -161,7 +162,7 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                         try:
                             role_object = discord.utils.get(interaction.guild.roles, id=role_id)
                         except:
-                            print(f"No role object found for {role_id}")
+                            logging.error(f"No role object found for {role_id}")
                             pass # we'll handle this on the button manager side
 
                     button_data_info_dict = {
@@ -177,9 +178,9 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                         'button_action': action
                     }
                     # generate button_data
-                    print("▶ Generating RoleButtonData instance from button.")
+                    logging.debug("▶ Generating RoleButtonData instance from button.")
                     button_data = RoleButtonData(button_data_info_dict)
-                    print(button_data)
+                    logging.debug(button_data)
                     # append to our button list
                     buttons.append(button_data)
 
@@ -191,16 +192,16 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
                 'role_id': None
             }
             button_data = RoleButtonData(button_data_info_dict)
-            print(button_data)
+            logging.debug(button_data)
 
-        print("⏳ Defining view...")
+        logging.debug("⏳ Defining view...")
         view = View(timeout=None)
 
-        print(f'Buttons list: {buttons}')
+        logging.debug(f'Buttons list: {buttons}')
         if buttons:
             for button_data_instance in buttons:
                 button = NewButton(buttons, button_data_instance)
-                print(f"🔘 Generated button from set {button_data_instance.unique_id}")
+                logging.debug(f"🔘 Generated button from set {button_data_instance.unique_id}")
                 view.add_item(button)
 
         # add master buttons
@@ -209,12 +210,11 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
         if buttons:
             view.add_item(MasterCommitButton(buttons, button_data))
 
-        print("▶ Adding view to original response...")
+        logging.debug("▶ Adding view to original response...")
         await interaction.edit_original_response(view=view)
 
     except Exception as e:
-        print(e)
-        traceback.print_exc()
+        logging.exception(e)
         try:
             raise GenericError(e)
         except Exception as e:
@@ -226,15 +226,14 @@ async def manage_role_buttons(interaction: discord.Interaction, message: discord
 @check_roles(any_elevated_role)
 @check_channel_permissions()
 async def edit_bot_embed(interaction: discord.Interaction, message: discord.Message):
-    print(f"Received Edit Bot Embed context interaction from {interaction.user} in {interaction.channel}")
+    logging.info(f"Received Edit Bot Embed context interaction from {interaction.user} in {interaction.channel}")
 
     try:
 
         await _edit_bot_embed(interaction, message)
 
     except Exception as e:
-        print(e)
-        traceback.print_exc()
+        logging.exception(e)
         try:
             raise GenericError(e)
         except Exception as e:
@@ -242,6 +241,7 @@ async def edit_bot_embed(interaction: discord.Interaction, message: discord.Mess
 
     # check message was sent by bot
     if not message.author == bot.user:
+        logging.error(f'{interaction.user.name} tried to edit an embed not sent by Rolercoaster.')
         try:
             raise CustomError(f"Buttons can only be added to messages sent by <@{bot.user.id}>")
         except Exception as e:
@@ -285,7 +285,7 @@ class ButtonRoleCommands(commands.Cog):
     @check_roles(any_elevated_role)
     @check_channel_permissions()
     async def _send_embed(self, interaction:  discord.Interaction):
-        print(f"{interaction.user.name} used /send_embed in {interaction.channel.name}")
+        logging.info(f"{interaction.user.name} used /send_embed in {interaction.channel.name}")
 
         instruction_embed = discord.Embed(
             title='🎨 CREATING EMBED',
@@ -322,18 +322,18 @@ class ButtonRoleCommands(commands.Cog):
     @check_roles(any_elevated_role)
     @check_channel_permissions()
     async def _edit_embed(self, interaction:  discord.Interaction, message_id: str):
-        print(f"{interaction.user.name} used /edit_embed in {interaction.channel.name}")
+        logging.info(f"{interaction.user.name} used /edit_embed in {interaction.channel.name}")
         try:
             if 'discord' in message_id:
                 # we got a jumpurl. attempt to isolate the message ID
                 url_parts = message_id.split('/')
                 last_part = url_parts[-1]
                 message_id = int(last_part)
-                print(f"Message ID: {message_id}")
+                logging.debug(f"Message ID: {message_id}")
             else:
                 # try to convert it to an int
                 message_id = int(message_id)
-                print(f"Message ID: {message_id}")
+                logging.debug(f"Message ID: {message_id}")
 
             # try to fetch a discord message object
             try:
@@ -341,6 +341,7 @@ class ButtonRoleCommands(commands.Cog):
             except NotFound as e:
                 error = f"**Unable to find a message with the ID `{message_id}` in this channel**." \
                         f" Please make sure you use this command in the same channel as the target message."
+                logging.error(error)
                 try:
                     raise CustomError(error)
                 except Exception as e:
@@ -348,10 +349,11 @@ class ButtonRoleCommands(commands.Cog):
                 return
 
             else:
-                print(f"Fetched message object {message}")
+                logging.info(f"Fetched message object {message}")
 
         except Exception as e:
             error = f"**Could not process input into a message**: ```{e}```"
+            logging.error(error)
             try:
                 raise CustomError(error)
             except Exception as e:

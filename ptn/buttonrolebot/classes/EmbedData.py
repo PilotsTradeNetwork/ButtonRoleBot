@@ -1,5 +1,6 @@
 from ptn.buttonrolebot.constants import EMBED_COLOUR_PTN_DEFAULT, DEFAULT_EMBED_DESC
 import json
+import logging
 
 class EmbedData:
 
@@ -49,7 +50,7 @@ class EmbedData:
             # Use setattr to set the attribute dynamically
             setattr(self, attribute_name, value)
         else:
-            print(f"⚠ Attribute '{attribute_name}' does not exist in EmbedData")
+            logging.error(f"⚠ Attribute '{attribute_name}' does not exist in EmbedData")
 
 
     def __str__(self):

@@ -2,9 +2,11 @@
 A view for previewing buttons before adding them.
 
 """
+import logging
 # import libraries
 from typing import Optional
 import emoji
+import logging
 
 # import discord
 import discord
@@ -79,7 +81,7 @@ class ButtonPreviewView(View):
             # send message with view and embed
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         except Exception as e:
-            print(e)
+            logging.exception(e)
             try:
                 raise GenericError(e)
             except Exception as e:

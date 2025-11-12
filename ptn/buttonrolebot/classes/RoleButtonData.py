@@ -2,6 +2,7 @@
 import discord
 # import our default button label
 from ptn.buttonrolebot.constants import DEFAULT_BUTTON_LABEL
+import logging
 
 class RoleButtonData:
 
@@ -54,7 +55,7 @@ class RoleButtonData:
         }
 
         style = style_mapping.get(self.button_style, None)
-        print(f"Style is {style}")
+        logging.debug(f"Style is {style}")
 
         return style
         
