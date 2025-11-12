@@ -2,33 +2,36 @@
 A view for previewing buttons before adding them.
 
 """
+
+import logging
+
 # import libraries
 from typing import Optional
-import emoji
 
 # import discord
 import discord
+import emoji
 from discord import HTTPException
 from discord.interactions import Interaction
-from discord.ui import View, Modal, Button
+from discord.ui import Button, Modal, View
+
+# import local constants
+import ptn.buttonrolebot.constants as constants
 
 # import bot
 from ptn.buttonrolebot.bot import bot
 
 # import local classes
 from ptn.buttonrolebot.classes.RoleButtonData import RoleButtonData
-
-# import local constants
-import ptn.buttonrolebot.constants as constants
 from ptn.buttonrolebot.constants import channel_botspam
+from ptn.buttonrolebot.modules.Embeds import amazing_embed, button_config_embed, stress_embed
+
+# import local modules
+from ptn.buttonrolebot.modules.ErrorHandler import BadRequestError, CustomError, GenericError, on_generic_error
+from ptn.buttonrolebot.modules.Helpers import _add_role_button_to_view, check_role_exists
 
 # import local views
 from ptn.buttonrolebot.ui_elements.ButtonConfig import ChooseRoleView
-
-# import local modules
-from ptn.buttonrolebot.modules.ErrorHandler import GenericError, on_generic_error, CustomError, BadRequestError
-from ptn.buttonrolebot.modules.Embeds import button_config_embed, stress_embed, amazing_embed
-from ptn.buttonrolebot.modules.Helpers import check_role_exists, _add_role_button_to_view
 
 """
 1. Generate an embed, heading_embed, declaring the below embed to be our preview.
@@ -63,7 +66,7 @@ class ButtonPreviewView(View):
         self.spamchannel = bot.get_channel(channel_botspam())
         super().__init__(timeout=timeout)
 
-    @discord.ui.button(label='New Button', emoji='👋', style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="New Button", emoji="👋", style=discord.ButtonStyle.secondary)
     async def new_button(self, interaction: discord.Interaction, button):
         try:
             # instantiate an empty instance of our RoleButtonData
@@ -79,7 +82,7 @@ class ButtonPreviewView(View):
             # send message with view and embed
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         except Exception as e:
-            print(e)
+            logging.exception(e)
             try:
                 raise GenericError(e)
             except Exception as e:
