@@ -106,7 +106,7 @@ class EmbedGenButtons(View):
         super().__init__(timeout=None)
         self.set_embed_author_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_name else discord.ButtonStyle.secondary
         self.set_embed_avatar_button.style=discord.ButtonStyle.success if self.embed_data.embed_author_avatar_url else discord.ButtonStyle.secondary
-        self.set_embed_color_button.style=discord.ButtonStyle.success if int(self.embed_data.embed_color) != EMBED_COLOUR_PTN_DEFAULT else discord.ButtonStyle.secondary
+        self.set_embed_color_button.style=discord.ButtonStyle.success if self.embed_data.embed_color and int(self.embed_data.embed_color) != EMBED_COLOUR_PTN_DEFAULT else discord.ButtonStyle.secondary
         self.set_embed_desc_button.style=discord.ButtonStyle.success if self.embed_data.embed_description != DEFAULT_EMBED_DESC else discord.ButtonStyle.primary
         self.set_embed_footer_button.style=discord.ButtonStyle.success if self.embed_data.embed_footer else discord.ButtonStyle.secondary
         self.set_embed_img_button.style=discord.ButtonStyle.success if self.embed_data.embed_image_url else discord.ButtonStyle.secondary
@@ -222,7 +222,7 @@ class EmbedGenButtons(View):
             else:
                 print("⏳ Converting existing color to hex in format 0x000000...")
                 hex_color = '0x{:06X}'.format(self.embed_data.embed_color)
-                print(f'▶ Hex color: {hex_color}') 
+                print(f'▶ Hex color: {hex_color}')
         except Exception as e:
             print(e)
 
@@ -374,7 +374,7 @@ class EmbedGenButtons(View):
             try:
                 raise CustomError(error)
             except Exception as e:
-                await on_generic_error(self.spamchannel, interaction, e)       
+                await on_generic_error(self.spamchannel, interaction, e)
 
         try:
             print("Calling function to generate Embed...")
@@ -395,7 +395,7 @@ class EmbedGenButtons(View):
                 print("Sending completed Embed...")
                 message = await interaction.channel.send(embed=send_embed)
                 print(f"Embed sent to {interaction.channel} by {interaction.user}")
-                
+
                 embed = discord.Embed(
                     description=f"✅ **Embed sent**. Message ID of containing message:\n"
                                 f"```{message.id}```",
@@ -602,4 +602,3 @@ class EmbedContentModal(Modal):
         except Exception as e:
             await on_generic_error(self.spamchannel, interaction, e)
         return
-

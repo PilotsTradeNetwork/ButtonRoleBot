@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 _production = ast.literal_eval(os.environ.get('PTN_BRB_SERVICE', 'False'))
 
 # define paths
-TESTING_DATA_PATH = os.path.join(os.getcwd(), 'ptn', 'buttonrolebot', 'data') # defines the path for use in a local testing environment
+TESTING_DATA_PATH = os.path.join(os.getcwd(), 'data') # defines the path for use in a local testing environment
 DATA_DIR = os.getenv('PTN_BRB_DATA_DIR', TESTING_DATA_PATH)
 
 
@@ -186,7 +186,7 @@ Headings:
 `# A preview of your Embed will appear here`
 - Bullets:
 `- Bullets:`
-**bold** *italics* _underline_ ~~strikethrough~~: 
+**bold** *italics* _underline_ ~~strikethrough~~:
 `**bold** *italics* _underline_ ~~strikethrough~~`
 ``` `Code blocks` ```
 `Code blocks`
