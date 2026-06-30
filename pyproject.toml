@@ -1,0 +1,107 @@
+[project]
+name = "ptn.buttonrolebot"
+description = "Pilots Trade Network Button Role Bot"
+authors = [
+    { name = "Sihmm" },
+]
+readme = "README.md"
+license = { text = "None" }
+keywords = ["PTN"]
+requires-python = ">=3.13"
+dependencies = [
+    "discord-ext-prometheus~=0.2",
+    "discord.py~=2.7",
+    "python-dotenv~=1.1",
+    "validators>=0.22.0",
+    "emoji>=2.8.0",
+]
+dynamic = ["version"]
+
+[project.scripts]
+buttonrolebot = "ptn.buttonrolebot.application:run"
+
+[build-system]
+requires = ["setuptools>=61.2", "wheel", "setuptools_scm[toml] >= 6"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Source = "https://github.com/PilotsTradeNetwork/ButtonRoleBot"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0+unknown"
+
+[tool.setuptools.packages.find]
+include = ["ptn.buttonrolebot*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "PL",  # pylint-convention
+    "I",   # isort
+    # "N",   # pep8-naming
+    # "RUF", # ruff
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "A",   # flake8-builtins
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "EXE", # flake8-executable
+    "FA",  # flake8-annotation
+    "ICN", # flake8-import-conventions
+    "LOG", # flake8-logging
+    "PIE", # flake8-pie
+    "RSE", # flake8-raise
+    "SIM", # flake8-simplify
+    "TC",  # flake8-type-checking
+    "PERF", # perflint
+    "FURB", # refurb
+    # "RET", # flake8-return
+    # "ARG", # flake8-arguments
+    # "FIX", # flake8-fixme
+    # "DTZ", # flake8-datetimez
+    # "PTH", # flake8-use-pathlib
+    # "BLE", # flake8-blind-except
+    # "FBT", # flake8-boolean-trap
+    # "C90", # mccabe complexity
+]
+ignore = [
+    "E402",
+    "E501",  # line too long, handled by ruff format
+    "S311",  # suspicious-non-cryptographic-random-usage
+    "PLR",   # pylint-refactor
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.basedpyright]
+include = ["ptn"]
+reportOptionalMemberAccess = false
+reportArgumentType = false
+reportAny = false
+reportExplicitAny = false
+reportMissingTypeStubs = false
+reportAttributeAccessIssue = false
+reportAssignmentType = false
+reportUnusedCallResult = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.32",
+    "ipython>=9.7",
+    "ruff>=0.14",
+    "ty>=0.0",
+]
