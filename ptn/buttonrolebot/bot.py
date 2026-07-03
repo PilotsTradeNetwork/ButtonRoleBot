@@ -106,7 +106,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
 
                 # check if user has it
                 print(f'Check whether user has role: "{role}"')
-                
+
                 if role not in interaction.user.roles and self.action != 'take':
                     print('User doesn\'t have role and action is not take')
                     # rolercoaster giveth
@@ -157,7 +157,7 @@ class DynamicButton(discord.ui.DynamicItem[discord.ui.Button], template = r'butt
                     raise CustomError(error)
                 except Exception as e:
                     await on_generic_error(spamchannel, interaction, e)
-                return 
+                return
 
             except Exception as e:
                 print(e)
@@ -213,8 +213,6 @@ Bot object
 class ButtonRoleBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.none()
-        intents.message_content = True
-        intents.members = True
         intents.messages = True
         intents.guilds = True
 
@@ -251,4 +249,3 @@ class ButtonRoleBot(commands.Bot):
 
 
 bot = ButtonRoleBot()
-
