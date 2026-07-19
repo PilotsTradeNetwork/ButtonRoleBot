@@ -1,6 +1,9 @@
 # Changelog
 
-## 1.1
+## 1.1.1
+- [#136](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/136) Remove unnecessary intents (IndorilReborn)
+
+## 1.1.0
 - [#128](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/128) Disable member caching, prune intents (axleantilles)
 - [#124](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/124) Add selectable loglevel to ButtonRoleBot (axleantilles)
 - [#125](https://github.com/PilotsTradeNetwork/ButtonRoleBot/pull/125) Adding debug logging capabilities (dupsatou)
