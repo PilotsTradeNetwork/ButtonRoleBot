@@ -233,7 +233,7 @@ class ButtonRoleBot(commands.Bot):
             global spamchannel
             spamchannel = bot.get_channel(channel_botspam())
             embed = discord.Embed(
-                title="🟢 BUTTON ROLE BOT ONLINE",
+                title="🟢 BUTTON ROLE BOT ONLINE (on_ready)",
                 description=f"🎢<@{bot.user.id}> connected, version **{__version__}**.",
                 color=EMBED_COLOUR_OK
             )

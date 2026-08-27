@@ -89,7 +89,7 @@ class AdminCommands(commands.Cog):
     async def ping(self, ctx):
         print(f"{ctx.author} used PING in {ctx.channel.name}")
         embed = discord.Embed(
-            title="🟢 BUTTON ROLE BOT ONLINE",
+            title="🟢 BUTTON ROLE BOT ONLINE (ping)",
             description=f"🎢<@{bot.user.id}> connected, version **{__version__}**.",
             color=constants.EMBED_COLOUR_OK
         )
