@@ -42,7 +42,7 @@ setup(
         'discord.py==2.5.2',
         'discord-ext-prometheus>=0.2.0',
         'emoji>=2.8.0',
-        'python-dotenv==0.15.0',
+        'python-dotenv==1.2.2',
         'python-dateutil>=2.8.1',
         'validators>=0.22.0'
     ],
